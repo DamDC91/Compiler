@@ -3,4 +3,8 @@ project main is
     for object_dir use "obj";
     for Exec_Dir use "bin";
     for main use ("main.adb");
+    
+    package compiler is
+    	for switches ("Ada") use ("-g3");
+    end Compiler;	
 end main;
