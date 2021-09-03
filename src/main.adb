@@ -8,6 +8,7 @@ with Ada.Strings.Fixed;
 use Ada.Strings.Fixed;
 with Ada.Exceptions;
 with Ada.Command_Line;
+with Asm_Generation;
 
 procedure main is
 
@@ -32,12 +33,14 @@ begin
       begin
 
          Lexical_Analysis.Load(FileName);
-
+         Asm_Generation.Create_File("test.asm");
          declare
             T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
          begin
+            Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
             Syntaxic_Analysis.Tree.Iterate(T,process'Access);
          end;
       end;
+      Asm_Generation.Close_File;
    end loop;
 end main;
