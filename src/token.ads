@@ -41,11 +41,9 @@ package Token is
                                  Tok_EOF);
 
 
-   function Hash(N : Positive) return Ada.Containers.Hash_Type;
-
-   package Map is new Ada.Containers.Indefinite_Hashed_Maps (Key_Type        => Positive,
-                                                             Element_Type    => String,
-                                                             Hash            => Hash,
+   package Map is new Ada.Containers.Indefinite_Hashed_Maps (Key_Type        => String,
+                                                             Element_Type    => Natural,
+                                                             Hash            => Ada.Strings.hash,
                                                              Equivalent_Keys => "=");
 
 

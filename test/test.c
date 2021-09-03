@@ -1,6 +1,6 @@
 int test(int a)
 {
-    int cst = 436;
+    int _cst = 436;
 
     int tab[9];
     for(int i=0;i<10;i++)

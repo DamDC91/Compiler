@@ -104,10 +104,16 @@ package body Lexical_Analysis is
                      end if;
                   else
                      declare
-                        Id_Value : Positive := Last_Id_Value;
+                        Id_Value : Positive;
                      begin
-                        Last_Id_Value := Last_Id_Value +1;
-                        Association_Table.Insert ( Id_Value, Id);
+                        if Association_Table.Contains(Id) then
+                           Id_Value := Association_Table.Element(Id);
+                        else
+                           Id_Value :=Last_Id_Value;
+                           Last_Id_Value := Last_Id_Value + 1;
+                           Association_Table.Insert (Id, Id_Value);
+                        end if;
+
 
                         return (Has_Value => True,
                                 Token_Type => Token.Tok_Id,
@@ -153,7 +159,7 @@ package body Lexical_Analysis is
             else
                Index := Index + 1;
                return (Has_Value => False,
-                       Token_Type => Token.Tok_Plus,
+                       Token_Type => Token.Tok_Exclamation_Mark,
                        Line => Line);
             end if;
          elsif char = '&' then
@@ -270,6 +276,13 @@ package body Lexical_Analysis is
                   Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
                   Index := Index + 1;
                end loop;
+               
+               if Is_Letter_Or_Underscore (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) then
+                  Error (msg  => "invalid constant",
+                         Line => Line);
+                  raise Constraint_Error;
+               end if;
+               
                Index := Index + 1;
                return (Has_Value => True, 
                        Token_Type => Token.Tok_Const,
@@ -292,14 +305,12 @@ package body Lexical_Analysis is
    procedure Load(FileName : String) is
    begin
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
-      Current_Token := Get_Token;
       Next_Token := Get_Token;
    end Load;
 
 
    procedure Advance_Token is
    begin
-      Token.Debug_Put_Line(Current_Token);
       Current_Token := Next_Token;
       Next_Token := Get_Token;
    end Advance_Token;
@@ -308,10 +319,10 @@ package body Lexical_Analysis is
       use type Token.Token_Type_Enum_Type;
    begin
       if Next_Token.Token_Type /= Token_Type then
-         return false;
+         return False;
       else
          Advance_Token;
-         return true;
+         return True;
       end if;
    end Check_Token;
 
@@ -324,7 +335,7 @@ package body Lexical_Analysis is
 
    procedure Error(msg : String; Line : Positive) is
    begin
-      Ada.Text_IO.Put_Line ("[Error] : " & msg & " l:" & Line'Image);
+      Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "[Error] : " & msg & " l:" & Line'Image);
    end Error;
 
    function EOF return Boolean is
