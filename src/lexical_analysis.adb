@@ -18,6 +18,9 @@ package body Lexical_Analysis is
    Last_Id_Value : Positive := 1;
 
    Association_Table : Token.Map.Map;
+   
+   Debug_Info : Boolean;
+   File_Info : Ada.Text_IO.File_Type;
 
 
    function Is_Letter_Or_Underscore (c : Character) return boolean is (Ada.Characters.Handling.Is_Letter (c) or c = '_');
@@ -302,15 +305,24 @@ package body Lexical_Analysis is
    end Get_Token;
 
 
-   procedure Load(FileName : String) is
+   procedure Load(FileName : String; Debug : Boolean) is
    begin
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
       Next_Token := Get_Token;
+      Debug_Info := Debug;
+      if Debug then
+         Ada.Text_IO.Create(File => File_Info,
+                            Mode => Ada.Text_IO.Out_File,
+                            Name => "tokens.txt");
+      end if;
    end Load;
 
 
    procedure Advance_Token is
    begin
+      if Debug_Info then
+         Ada.Text_IO.Put_Line (File_Info, Token.Debug_Print (Next_Token));
+      end if;
       Current_Token := Next_Token;
       Next_Token := Get_Token;
    end Advance_Token;
@@ -353,5 +365,12 @@ package body Lexical_Analysis is
    begin
       return Next_Token;
    end Get_Next_Token;
+   
+   procedure Close_Debug is 
+   begin
+      if Debug_Info then
+         Ada.Text_IO.Close (File_Info);
+      end if;
+   end Close_Debug;
 
 end Lexical_Analysis;

@@ -1,46 +1,66 @@
-with Ada.Text_IO;
-use Ada.Text_IO;
-with Token;
-with Text_Utils;
 with Lexical_Analysis;
 with Syntaxic_Analysis;
 with Ada.Strings.Fixed;
-use Ada.Strings.Fixed;
-with Ada.Exceptions;
-with Ada.Command_Line;
 with Asm_Generation;
+with GNATCOLL.Opt_Parse;
+with Ada.Strings.Unbounded;
+with Ada.Directories;
 
 procedure main is
 
-   procedure process (C : Syntaxic_Analysis.Tree.Cursor) is
-      N : constant Syntaxic_Analysis.Node := Syntaxic_Analysis.Tree.Element (C);
-      P : constant Natural := Natural (Syntaxic_Analysis.Tree.Depth (C))-2;
-      str : constant string := P * "--";
-   begin
-      Ada.Text_IO.Put(str);
-      Syntaxic_Analysis.Debug_Print (N);
-   end process;
+   package Args is
+      use GNATCOLL.Opt_Parse;
+      Parser : Argument_Parser := Create_Argument_Parser (Help => "reduce C Compiler for msm");
+
+      package Files is new Parse_Positional_Arg_List (Parser      => Parser,
+                                                      Name        => "files",
+                                                      Help        => "files to compile",
+                                                      Allow_Empty => False,
+                                                      Arg_Type    => Ada.Strings.Unbounded.Unbounded_String);
+      package debug is new Parse_Flag (Parser  => Parser,
+                                       Short   => "-d",
+                                       Long    => "--debug",
+                                       Help    => "Print debug infos");
+
+   end Args;
 
 begin
-   if Ada.Command_Line.Argument_Count < 1 then
-      Put_Line (Standard_Error, "Invalid file");
-      return;
-   end if;
 
-   for i in 1..Ada.Command_Line.Argument_Count loop
+   if Args.Parser.Parse then
+
       declare
-         FileName : constant String := Ada.Command_Line.Argument(i);
+         Is_Debug_Mode : constant Boolean := Args.debug.Get;
+         Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
+
       begin
 
-         Lexical_Analysis.Load(FileName);
-         Asm_Generation.Create_File("test.asm");
-         declare
-            T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
-         begin
-            Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
-            Syntaxic_Analysis.Tree.Iterate(T,process'Access);
-         end;
+         for i in Files_Array'First ..Files_Array'Last loop
+            declare
+               FileName : constant String := Ada.Strings.Unbounded.To_String (Files_Array (i));
+               Simple_FileName : constant String := Ada.Directories.Simple_Name (FileName);
+               Index : constant Integer := Ada.Strings.Fixed.Index (Source  => Simple_FileName,
+                                                                    Pattern => ".c") - 1;
+               Asm_FileName : constant String := Simple_FileName (Simple_FileName'First..Index) & ".asm";
+
+            begin
+
+               Lexical_Analysis.Load(FileName, Is_Debug_Mode);
+               Asm_Generation.Create_File(Asm_FileName);
+
+               declare
+                  T : constant Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+               begin
+                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+                  if Is_Debug_Mode then
+                     Syntaxic_Analysis.Debug_Print_Tree (T);
+                  end if;
+               end;
+
+            end;
+            Asm_Generation.Close_File;
+         end loop;
+         Lexical_Analysis.Close_Debug;
+
       end;
-      Asm_Generation.Close_File;
-   end loop;
+   end if;
 end main;

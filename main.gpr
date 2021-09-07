@@ -1,3 +1,5 @@
+with "gnatcoll.gpr";
+
 project main is
     for source_dirs use ("src");
     for object_dir use "obj";
@@ -5,6 +7,6 @@ project main is
     for main use ("main.adb");
     
     package compiler is
-    	for switches ("Ada") use ("-g3");
+    	for switches ("Ada") use ("-g", "-gnatwa");
     end Compiler;	
 end main;

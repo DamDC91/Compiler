@@ -1,13 +1,15 @@
 with Lexical_Analysis;
 with Token;
 with Ada.Text_IO;
+with Ada.Strings.Fixed;
+
 package body Syntaxic_Analysis is
 
    function Same_Node (L,R : Node) return Boolean is
-      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line and L.Has_Value and R.Has_Value;
+      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line and L.Has_Value = R.Has_Value;
    begin
       if ok and L.Has_Value then
-         ok := ok and L.Value = R.Value;
+         ok := L.Value = R.Value;
       end if;
       return ok;
    end Same_Node;
@@ -25,7 +27,6 @@ package body Syntaxic_Analysis is
 
    function P return Tree.Tree is
    begin
-      --Token.Debug_Put_Line (Lexical_Analysis.Get_Next_Token);
       if Lexical_Analysis.Check_Token(Token.Tok_Plus) then
          return P;
       elsif Lexical_Analysis.Check_Token(Token.Tok_Minus) then
@@ -140,13 +141,13 @@ package body Syntaxic_Analysis is
          end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Left_Parenthesis) then
          declare
-            T : Tree.Tree := E;
+            T : constant Tree.Tree := E;
          begin
             Lexical_Analysis.Accept_Token (Token.Tok_Right_Parenthesis);
             return T;
          end;
       else
-         Lexical_Analysis.Error (msg  => "Impossible to parse an expression",
+         Lexical_Analysis.Error (msg  => "An atomic was expected here",
                                  Line => Lexical_Analysis.Get_Current_Token.Line);
          raise Constraint_Error;
       end if;
@@ -158,15 +159,35 @@ package body Syntaxic_Analysis is
    end S;
 
 
-   procedure Debug_Print (N : Node) is
+   function Debug_Print (N : Node) return string is
    begin
       if not N.Has_Value then
-         Ada.Text_IO.Put_Line ("(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")");
+         return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
       else
-         Ada.Text_IO.Put_Line ("(" & N.Node_Type'Image & ", val:" & N.Value'Image & ", l:" & N.Line'Image & ")");
+         return "(" & N.Node_Type'Image & ", val:" & N.Value'Image & ", l:" & N.Line'Image & ")";
       end if;
    end Debug_Print;
 
+   procedure Debug_Print_Tree (T : Tree.Tree) is
+      Debug_File_Tree : Ada.Text_IO.File_Type;
+
+      procedure Print_Tree (C : Tree.Cursor) is
+         use Ada.Strings.Fixed;
+         N : constant Node := Tree.Element (C);
+         P : constant Natural := Natural (Tree.Depth (C))-2;
+         str : constant string := P * "--";
+      begin
+            Ada.Text_IO.Put (Debug_File_Tree, str);
+            Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
+      end Print_Tree;
+
+   begin
+      Ada.Text_IO.Create (File => Debug_File_Tree,
+                          Mode => Ada.Text_IO.Out_File,
+                          Name => "tree.txt");
+      Tree.Iterate (T, Print_Tree'Access);
+      Ada.Text_IO.Close (Debug_File_Tree);
+   end Debug_Print_Tree;
 
 end Syntaxic_Analysis;
 

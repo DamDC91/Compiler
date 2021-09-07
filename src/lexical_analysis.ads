@@ -1,7 +1,7 @@
 with Token;
 package Lexical_Analysis is
 
-   procedure Load(FileName : String);
+   procedure Load(FileName : String; Debug : Boolean);
 
    procedure Advance_Token;
 
@@ -16,6 +16,8 @@ package Lexical_Analysis is
    function Get_Current_Token return Token.Token_Record_Type;
 
    function Get_Next_Token return Token.Token_Record_Type;
+
+   procedure Close_Debug;
 
 
 end Lexical_Analysis;

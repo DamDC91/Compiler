@@ -20,12 +20,14 @@ package Syntaxic_Analysis is
       end case;
    end record;
 
-   procedure Debug_Print (N : Node);
+   function Debug_Print (N : Node) return string;
 
    function Same_Node (L,R : Node) return Boolean;
 
    package Tree is new Ada.Containers.Indefinite_Multiway_Trees(Element_Type => Node,
                                                                 "="          => Same_Node);
+
+   procedure Debug_Print_Tree (T : Tree.Tree);
 
    function G return Tree.Tree;
 

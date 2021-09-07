@@ -56,7 +56,7 @@ package Token is
       end case;
    end record;
 
-   procedure Debug_Put_Line(T : Token_Record_Type);
+   function Debug_Print (T : Token_Record_Type) return string;
 
 
 end Token;
