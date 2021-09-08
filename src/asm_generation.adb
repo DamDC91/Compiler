@@ -24,7 +24,7 @@ package body Asm_Generation is
    Function Image (Nb : Integer) return string is (Ada.Strings.Fixed.Trim (Nb'Image, Ada.Strings.Both));
    
    procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor) is
-      Node : constant Syntaxic_Analysis.Node := Syntaxic_Analysis.Tree.Element (C);
+      Node : constant Syntaxic_Analysis.Node_Record_Type := Syntaxic_Analysis.Tree.Element (C);
    begin
       case Node.Node_Type is
          when Syntaxic_Analysis.Node_Constant =>
@@ -40,6 +40,7 @@ package body Asm_Generation is
             null; --TODO
          when Syntaxic_Analysis.Node_Dereference =>
             null; --TODO
+         when others => null; -- TODO !!!!
       end case;
    end Generate_Asm;
    

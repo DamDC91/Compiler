@@ -5,13 +5,14 @@ package Token is
 
    type Token_Type_Enum_Type is (Tok_Const,
                                  Tok_Id,
+                                 Tok_Exclamation_Mark,
+                                 Tok_Ampersand, -- &
+
                                  Tok_Plus,
                                  Tok_Minus,
                                  Tok_Asterisk,
                                  Tok_Slash,
                                  Tok_Percent,
-                                 Tok_Exclamation_Mark,
-                                 Tok_Ampersand, -- &
                                  Tok_Assignment, -- =
                                  Tok_Equal_Comparaison, -- ==
                                  Tok_Difference_Comparaison,  -- !=
@@ -21,6 +22,7 @@ package Token is
                                  Tok_Less_Or_Equal_Than, -- <=
                                  Tok_And_Boolean, -- &&
                                  Tok_Or_Boolean, -- ||
+
                                  Tok_Comma,
                                  Tok_Semi_Colon,
                                  Tok_Left_Parenthesis, -- (

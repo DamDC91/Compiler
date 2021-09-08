@@ -1,19 +1,39 @@
 with Lexical_Analysis;
-with Token;
 with Ada.Text_IO;
 with Ada.Strings.Fixed;
 
 package body Syntaxic_Analysis is
 
-   function Same_Node (L,R : Node) return Boolean is
-      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line and L.Has_Value = R.Has_Value;
-   begin
-      if ok and L.Has_Value then
-         ok := L.Value = R.Value;
-      end if;
-      return ok;
-   end Same_Node;
+   Op_Map : Operation_Map.Map;
 
+   procedure Init is
+   begin
+      Op_Map.Insert (Key => Token.Tok_Assignment,
+                     New_Item  => (Left_Priority => 1,
+                                   Right_Priority => 1,
+                                   Node => Node_Op_Assignment));
+      Op_Map.Insert (Key => Token.Tok_Or_Boolean,
+                     New_Item  => (Left_Priority => 2,
+                                   Right_Priority => 3,
+                                   Node => Node_Op_Or_Boolean));
+      Op_Map.Insert (Key => Token.Tok_And_Boolean,
+                     New_Item  => (Left_Priority => 3,
+                                   Right_Priority => 4,
+                                   Node => Node_Op_And_Boolean));
+      Op_Map.Insert (Key => Token.Tok_Equal_Comparaison,
+                     New_Item  => (Left_Priority => 4,
+                                   Right_Priority => 5,
+                                   Node => Node_Op_Equal_Comparaison));
+      Op_Map.Insert (Key => Token.Tok_Difference_Comparaison,
+                     New_Item  => (Left_Priority => 4,
+                                   Right_Priority => 5,
+                                   Node => Node_Op_Difference_Comparaison));
+      Op_Map.Insert (Key => Token.Tok_Or_Boolean,
+                     New_Item  => (Left_Priority => 2,
+                                   Right_Priority => 3,
+                                   Node => Node_Op_Or_Boolean));
+
+   end Init;
 
    function G return Tree.Tree is
    begin
@@ -88,7 +108,7 @@ package body Syntaxic_Analysis is
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
-          Tree.Splice_Subtree (Target => NT,
+            Tree.Splice_Subtree (Target => NT,
                                  Parent   => Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
@@ -159,7 +179,24 @@ package body Syntaxic_Analysis is
    end S;
 
 
-   function Debug_Print (N : Node) return string is
+
+
+   function Equals_Operation_Token (L,R : Operation_Token) return boolean is
+      use type Token.Token_Type_Enum_Type;
+   begin
+      return  L = R;
+   end Equals_Operation_Token;
+
+   function Same_Node (L,R : Node_Record_Type) return Boolean is
+      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line and L.Has_Value = R.Has_Value;
+   begin
+      if ok and L.Has_Value then
+         ok := L.Value = R.Value;
+      end if;
+      return ok;
+   end Same_Node;
+
+   function Debug_Print (N : Node_Record_Type) return string is
    begin
       if not N.Has_Value then
          return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
@@ -173,12 +210,12 @@ package body Syntaxic_Analysis is
 
       procedure Print_Tree (C : Tree.Cursor) is
          use Ada.Strings.Fixed;
-         N : constant Node := Tree.Element (C);
+         N : constant Node_Record_Type := Tree.Element (C);
          P : constant Natural := Natural (Tree.Depth (C))-2;
          str : constant string := P * "--";
       begin
-            Ada.Text_IO.Put (Debug_File_Tree, str);
-            Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
+         Ada.Text_IO.Put (Debug_File_Tree, str);
+         Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
       end Print_Tree;
 
    begin
