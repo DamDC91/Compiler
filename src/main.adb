@@ -33,6 +33,7 @@ begin
          Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
 
       begin
+         Syntaxic_Analysis.Init;
 
          for i in Files_Array'First ..Files_Array'Last loop
             declare
@@ -50,10 +51,13 @@ begin
                declare
                   T : constant Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
                begin
-                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
                   if Is_Debug_Mode then
                      Syntaxic_Analysis.Debug_Print_Tree (T);
+                     Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
                   end if;
+
+                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+
                end;
 
             end;
@@ -63,4 +67,5 @@ begin
 
       end;
    end if;
+
 end main;

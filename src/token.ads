@@ -7,6 +7,7 @@ package Token is
                                  Tok_Id,
                                  Tok_Exclamation_Mark,
                                  Tok_Ampersand, -- &
+                                 Tok_Debug, -- Temp
 
                                  Tok_Plus,
                                  Tok_Minus,

@@ -29,7 +29,7 @@ package body Lexical_Analysis is
 
    function Is_C_KeyWord (s : string) return boolean is
    begin
-      return s = "if" or s = "int" or s = "else" or s = "for" or s = "while" or s = "do" or s = "continue" or s = "break" or s = "return";
+      return s = "if" or s = "int" or s = "else" or s = "for" or s = "while" or s = "do" or s = "continue" or s = "break" or s = "return" or s = "debug"; -- temp
    end Is_C_KeyWord;
 
 
@@ -101,6 +101,10 @@ package body Lexical_Analysis is
                      elsif Id = "return" then
                         return (Has_Value => False,
                                 Token_Type => Token.Tok_Return,
+                                Line => Line);
+                     elsif Id = "debug" then
+                        return (Has_Value => False,
+                                Token_Type => Token.Tok_Debug,  -- Temp
                                 Line => Line);
                      else
                         raise Constraint_Error; -- impossible
