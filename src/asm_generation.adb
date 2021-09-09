@@ -70,7 +70,6 @@ package body Asm_Generation is
             Put_Line (File, "not");
             
          when Syntaxic_Analysis.Node_Address =>
-            
             null; --TODO
          when Syntaxic_Analysis.Node_Dereference =>
             null; --TODO
