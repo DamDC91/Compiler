@@ -7,6 +7,12 @@ package body Syntaxic_Analysis is
 
    Op_Table : array (Operation_Token) of Operation_Record_Type;
 
+   function Set_Discriminant (Node_Type : Node_Type_Enum_Type) return Node_Variant_Type is
+      pragma Warnings(off, "variable ""Result"" is read but never assigned");
+   begin
+      return Result : Node_Variant_Type (Node_Type => Node_Type);
+   end Set_Discriminant;
+
    procedure Init is
       use Token;
    begin
@@ -93,12 +99,12 @@ package body Syntaxic_Analysis is
                      Pos : Tree.Cursor;
                      unused : Tree.Cursor := Tree.First_Child (N.Root);
                      unused2 : Tree.Cursor := Tree.First_Child (A.Root);
+                     New_Item : Node_Variant_Type := Set_Discriminant (Op.Node);
                   begin
+                     New_Item.Line := Next.Line;
                      New_N.Insert_Child (Parent   => New_N.Root,
                                          Before   => Tree.No_Element,
-                                         New_Item => (Has_Value => False,
-                                                      Node_Type => Op.Node,
-                                                      Line => Next.Line),
+                                         New_Item => New_Item,
                                          Position    => Pos);
 
                      Tree.Splice_Subtree (Target => New_N,
@@ -135,8 +141,7 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Minus_U,
+                             New_Item => (Node_Type => Node_Minus_U,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
@@ -157,8 +162,7 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Not,
+                             New_Item => (Node_Type => Node_Not,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
@@ -180,8 +184,7 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Dereference,
+                             New_Item => (Node_Type => Node_Dereference,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
@@ -202,8 +205,7 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Address,
+                             New_Item => (Node_Type => Node_Address,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
@@ -230,12 +232,23 @@ package body Syntaxic_Analysis is
          begin
             T.Insert_Child (Parent   => T.Root,
                             Before   => Tree.No_Element,
-                            New_Item => (Has_Value => True,
-                                         Node_Type => Node_Constant,
+                            New_Item => (Node_Type => Node_Constant,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
                                          Value => Lexical_Analysis.Get_Current_Token.Value));
             return T;
          end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_Id) then
+         declare
+            T : Tree.Tree;
+            begin
+               T.Insert_Child (Parent   => T.Root,
+                               Before   => Tree.No_Element,
+                               New_Item => (Node_Type => Node_Var_Ref,
+                                            Line => Lexical_Analysis.Get_Current_Token.Line,
+                                            Ref_Var_Key => Lexical_Analysis.Get_Current_Token.Value,
+                                            Var_Stack_Index => 0));
+               return T;
+            end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Left_Parenthesis) then
          declare
             T : constant Tree.Tree := E;
@@ -266,8 +279,7 @@ package body Syntaxic_Analysis is
          begin
             T.Insert_Child (Parent   => T.Root,
                             Before   => Tree.No_Element,
-                            New_Item => (Has_Value => False,
-                                         Node_Type => Node_Instruction_Block,
+                            New_Item => (Node_Type => Node_Instruction_Block,
                                          Line => Lexical_Analysis.Get_Current_Token.Line),
                             Position => Pos);
             while not Lexical_Analysis.Check_Token (Token.Tok_Right_Curly_Bracket) loop
@@ -295,8 +307,7 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Debug,
+                             New_Item => (Node_Type => Node_Debug,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
                              Position => Pos);
 
@@ -309,6 +320,37 @@ package body Syntaxic_Analysis is
                                  Position => unused);
             return NT;
          end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_Int) then
+         declare
+            N : Tree.Tree;
+            Pos : Tree.Cursor;
+            unused : Tree.Cursor;
+         begin
+            N.Insert_Child (Parent   => N.Root,
+                               Before   => Tree.No_Element,
+                               New_Item => (Node_Type => Node_Seq,
+                                            Line => Lexical_Analysis.Get_Current_Token.Line),
+                               Position => Pos);
+
+            Lexical_Analysis.Accept_Token (Token.Tok_Id);
+
+            N.Insert_Child (Parent   => Pos,
+                            Before   => Tree.No_Element,
+                            New_Item => (Node_Type => Node_Var_Decl,
+                                         Line => Lexical_Analysis.Get_Current_Token.Line,
+                                         Var_Key => Lexical_Analysis.Get_Current_Token.Value));
+
+            while not Lexical_Analysis.Check_Token (Token.Tok_Semi_Colon) loop
+               Lexical_Analysis.Accept_Token (Token.Tok_Comma);
+               Lexical_Analysis.Accept_Token (Token.Tok_Id);
+               N.Insert_Child (Parent   => Pos,
+                               Before   => Tree.No_Element,
+                               New_Item => (Node_Type => Node_Var_Decl,
+                                            Line => Lexical_Analysis.Get_Current_Token.Line,
+                                            Var_Key => Lexical_Analysis.Get_Current_Token.Value));
+            end loop;
+            return N;
+         end;
       else
          declare
             T : Tree.Tree := E;
@@ -318,10 +360,9 @@ package body Syntaxic_Analysis is
          begin
             NT.Insert_Child (Parent   => NT.Root,
                              Before   => Tree.No_Element,
-                             New_Item => (Has_Value => False,
-                                          Node_Type => Node_Drop,
+                             New_Item => (Node_Type => Node_Drop,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                            Position => Pos);
+                             Position => Pos);
 
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
 
@@ -335,22 +376,35 @@ package body Syntaxic_Analysis is
       end if;
    end I;
 
-   function Same_Node (L,R : Node_Record_Type) return Boolean is
-      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line and L.Has_Value = R.Has_Value;
+   function Same_Node (L,R : Node_Variant_Type) return Boolean is
+      Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line;
    begin
-      if ok and L.Has_Value then
-         ok := L.Value = R.Value;
+      if ok then
+         case L.Node_Type is
+         when Node_Constant =>
+            Ok := L.Value = R.Value;
+         when Node_Var_Decl =>
+            Ok := L.Var_Key = R.Var_Key;
+         when Node_Var_Ref =>
+            Ok := L.Ref_Var_Key = R.Ref_Var_Key and L.Var_Stack_Index = R.Var_Stack_Index;
+         when others => null;
+         end case;
       end if;
       return ok;
    end Same_Node;
 
-   function Debug_Print (N : Node_Record_Type) return string is
+   function Debug_Print (N : Node_Variant_Type) return string is
    begin
-      if not N.Has_Value then
-         return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
-      else
-         return "(" & N.Node_Type'Image & ", val:" & N.Value'Image & ", l:" & N.Line'Image & ")";
-      end if;
+      case N.Node_Type is
+         when Node_Constant =>
+            return "(" & N.Node_Type'Image & ", Val:" & N.Value'Image & ", l:" & N.Line'Image & ")";
+         when Node_Var_Decl =>
+            return "(" & N.Node_Type'Image & ", Var_Key:" & N.Var_Key'Image & ", l:" & N.Line'Image & ")";
+         when Node_Var_Ref =>
+            return "(" & N.Node_Type'Image & ", Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & " l:" & N.Line'Image & ")";
+         when others =>
+            return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
+      end case;
    end Debug_Print;
 
    procedure Debug_Print_Tree (T : Tree.Tree) is
@@ -358,7 +412,7 @@ package body Syntaxic_Analysis is
 
       procedure Print_Tree (C : Tree.Cursor) is
          use Ada.Strings.Fixed;
-         N : constant Node_Record_Type := Tree.Element (C);
+         N : constant Node_Variant_Type := Tree.Element (C);
          P : constant Natural := Natural (Tree.Depth (C))-2;
          str : constant string := P * "----";
       begin
@@ -377,17 +431,27 @@ package body Syntaxic_Analysis is
 
    procedure Debug_Print_Tree_Graphviz (T : Tree.Tree) is
       function Get_label (C : Tree.Cursor) return string is
-         N : constant Node_Record_Type := Tree.Element (C);
+         N : constant Node_Variant_Type := Tree.Element (C);
          Img : constant String := N.Node_Type'Image;
          Index : constant Integer := Ada.Strings.Fixed.Index (Img, "_");
+         Node_Img : constant String := Img (Index + 1..Img'Last);
       begin
-         if N.Has_Value then
-            return Img(Index+1.. Img'Last) & " (" & Ada.Strings.Fixed.Trim (N.Value'Image, Ada.Strings.Both) & ")";
-         else
-            return Img(Index+1..Img'Last);
-         end if;
+         case N.Node_Type is
+         when Node_Constant =>
+            return Node_Img & "(Val:" & N.Value'Image &")";
+         when Node_Var_Decl =>
+            return Node_Img & "(Var_Key:" & N.Var_Key'Image & ")";
+         when Node_Var_Ref =>
+            return Node_Img & "(Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & ")";
+         when others =>
+            return Node_Img;
+         end case;
       end Get_label;
-      function Get_arrow (C : Tree.Cursor) return string is ("");
+      function Get_arrow (C : Tree.Cursor) return string is
+         pragma Unreferenced(C);
+      begin
+         return "";
+      end Get_arrow;
       package Graphviz is new Tree_Graphviz (Cursor          => Tree.Cursor,
                                              Depth           => Tree.Depth,
                                              Get_Node_Label  => Get_label,

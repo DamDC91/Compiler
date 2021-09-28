@@ -1,0 +1,55 @@
+#!/usr/bin/python
+import subprocess
+import os
+
+RED = '\033[31m'
+ENDC = '\033[m'
+GREEN = '\033[32m'
+BLUE = '\033[34m'
+
+compiler = os.path.abspath("./bin/main")
+msm = os.path.abspath("../machine/msm/msm")
+
+os.chdir("./test")
+
+for test_dir_name in os.listdir("."):
+    if test_dir_name == "fuzzing_exp":
+        continue
+
+    print("==== " + BLUE + test_dir_name + ENDC + " ====")
+    os.chdir(test_dir_name)
+    for test_name in os.listdir("."):
+
+        os.chdir(test_name)
+        p=""
+        try:
+            p = subprocess.check_output(compiler + ' -d test.c', stderr = subprocess.STDOUT, shell = True)
+        except:
+            print(test_name + RED + " [ko]" + ENDC + " (failed to run the compiler...)")
+            os.chdir("..")
+            continue;
+
+        try:
+            p = subprocess.check_output(msm + ' test.asm', stderr = subprocess.STDOUT, shell = True)
+        except:
+            print(test_name + RED + " [ko]" + ENDC + " (failed to run the asm...)")
+            os.chdir("..")
+            continue;
+
+        s = ""
+        try:
+            f = open("excepted.txt", 'r')
+            s = f.read()
+        except:
+            print(test_name + RED + " [ko]" + ENDC + " (failed to open excepted.txt...)")
+            os.chdir("..")
+            continue;
+
+        if s == p:
+            print(test_name + GREEN + " [ok]" + ENDC)
+            p = subprocess.check_output('rm test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+        else:
+            print(test_name + RED + " [ko]" + ENDC)
+            
+        os.chdir("..")
+    os.chdir("..")

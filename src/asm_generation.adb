@@ -2,10 +2,10 @@ with Ada.Text_IO;
 use Ada.Text_IO;
 with Ada.Strings.Fixed;
 with Ada.Containers;
+with Semantic_Analysis;
 package body Asm_Generation is
    
    File : File_Type;
-   
    
    procedure Create_File (FileName : String) is
    begin      
@@ -13,6 +13,7 @@ package body Asm_Generation is
               Mode => Out_File,
               Name => FileName);
       Put_Line (File, ".start");
+      Put_Line (File , "resn " & Semantic_Analysis.Get_Nb_Var'Image);
    end Create_File;
    
    procedure Close_File is
@@ -29,7 +30,6 @@ package body Asm_Generation is
       use Syntaxic_Analysis;
    begin
       case N is
-         when Node_Op_Assignment => return "--TODO";
          when Node_Op_Or_Boolean => return "or";
          when Node_Op_And_Boolean => return "and";
          when Node_Op_Equal_Comparaison => return "cmpeq";
@@ -47,7 +47,7 @@ package body Asm_Generation is
    end Get_Asm_Instruction;
    
    procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor) is
-      Node : constant Syntaxic_Analysis.Node_Record_Type := Syntaxic_Analysis.Tree.Element (C);
+      Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       use type Ada.Containers.Count_Type;
    begin
       case Node.Node_Type is
@@ -98,6 +98,31 @@ package body Asm_Generation is
               end if;
             Generate_Asm (Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "dbg");
+            
+         when Syntaxic_Analysis.Node_Var_Decl => 
+            null; --nothing to do
+            
+         when Syntaxic_Analysis.Node_Var_Ref => 
+            Put_Line (File, "get "& Node.Var_Stack_Index'Image);
+            
+         when Syntaxic_Analysis.Node_Op_Assignment =>
+            declare
+               First_Child : constant Syntaxic_Analysis.Tree.Cursor := Syntaxic_Analysis.Tree.First_Child(C);
+               First_Child_Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (First_Child);
+               use type Syntaxic_Analysis.Node_Type_Enum_Type;
+            begin
+               if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
+                  raise Constraint_Error with "Left operand is not a variable";
+               end if;
+               Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
+               Put_Line (File, "dup");
+               Put_Line (File, "set " & First_Child_Node.Var_Stack_Index'Image);
+            end;
+            
+               
+         when Syntaxic_Analysis.Node_Seq => 
+                        Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                     Process => Generate_Asm'Access);
       end case;
    end Generate_Asm;
    

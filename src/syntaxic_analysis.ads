@@ -24,25 +24,34 @@ package Syntaxic_Analysis is
                                 Node_Op_Division,
                                 Node_Op_Modulo,
 
+                                Node_Var_Decl,
+                                Node_Var_Ref,
+                                Node_Seq,
+
                                 Node_Drop,
                                 Node_Instruction_Block,
                                 Node_Debug); -- temp
 
-   subtype Operation_Node_Enum_Type is Node_Type_Enum_Type range Node_Op_Assignment .. Node_Op_Modulo;
+   subtype Operation_Node_Enum_Type is Node_Type_Enum_Type range Node_Op_Or_Boolean .. Node_Op_Modulo;
 
 
-   type Node_Record_Type (Has_Value : Boolean := False) is record
-      Node_Type : Node_Type_Enum_Type;
+   type Node_Variant_Type (Node_Type : Node_Type_Enum_Type := Node_Debug) is record
       Line      : Positive;
-      case Has_Value is
-         when True => Value : Natural;
-         when False => null;
+      case Node_Type is
+         when Node_Constant =>
+            Value : Natural;
+         when Node_Var_Decl =>
+            Var_Key : Natural;
+         when Node_Var_Ref =>
+            Ref_Var_Key : Natural;
+            Var_Stack_Index : Natural;
+         when others => null;
       end case;
    end record;
 
-   function Same_Node (L,R : Node_Record_Type) return Boolean;
+   function Same_Node (L,R : Node_Variant_Type) return Boolean;
 
-   package Tree is new Ada.Containers.Indefinite_Multiway_Trees (Element_Type => Node_Record_Type,
+   package Tree is new Ada.Containers.Indefinite_Multiway_Trees (Element_Type => Node_Variant_Type,
                                                                  "="          => Same_Node);
 
    procedure Debug_Print_Tree (T : Tree.Tree);
@@ -65,7 +74,7 @@ package Syntaxic_Analysis is
 
    procedure Init;
 
-   function Debug_Print (N : Node_Record_Type) return string;
+   function Debug_Print (N : Node_Variant_Type) return string;
 
    subtype Operation_Token is Token.Token_Type_Enum_Type range Token.Tok_Plus .. Token.Tok_Or_Boolean;
 

@@ -25,14 +25,14 @@ def random_nb():
 p=0
 while (t<max_t):
     test = random.randint(1,20)
-    if (test < 3 and (t + 2 < max_t) and False): #no (
+    if (test < 3 and (t + 2 < max_t)):
         p=p+1
         exp = exp + " ( "
 
     exp = exp + " " + str(random_nb())
 
     test = random.randint(1,20)
-    if (test < 5 and p>0):
+    if (test < 3 and (t + 2 < max_t) and p>0):
         p=p-1
         exp = exp + " ) "
 

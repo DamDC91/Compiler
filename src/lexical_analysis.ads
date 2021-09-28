@@ -1,4 +1,5 @@
 with Token;
+with Ada.Containers.Indefinite_Vectors;
 package Lexical_Analysis is
 
    procedure Load(FileName : String; Debug : Boolean);
@@ -18,6 +19,10 @@ package Lexical_Analysis is
    function Get_Next_Token return Token.Token_Record_Type;
 
    procedure Close_Debug;
+
+   package Vector_Association_Table is new Ada.Containers.Indefinite_Vectors (Index_Type   => Positive,
+                                                                              Element_Type => Positive);
+   function Get_Association_Table return Vector_Association_Table.Vector;
 
 
 end Lexical_Analysis;

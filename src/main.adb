@@ -5,6 +5,7 @@ with Asm_Generation;
 with GNATCOLL.Opt_Parse;
 with Ada.Strings.Unbounded;
 with Ada.Directories;
+with Semantic_Analysis;
 
 procedure main is
 
@@ -14,9 +15,10 @@ procedure main is
 
       package Files is new Parse_Positional_Arg_List (Parser      => Parser,
                                                       Name        => "files",
-                                                      Help        => "files to compile",
+                                                      Help        => "Files to compile",
                                                       Allow_Empty => False,
                                                       Arg_Type    => Ada.Strings.Unbounded.Unbounded_String);
+
       package debug is new Parse_Flag (Parser  => Parser,
                                        Short   => "-d",
                                        Long    => "--debug",
@@ -46,17 +48,22 @@ begin
             begin
 
                Lexical_Analysis.Load(FileName, Is_Debug_Mode);
-               Asm_Generation.Create_File(Asm_FileName);
+
 
                declare
-                  T : constant Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+                  T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
                begin
+                  Semantic_Analysis.AST_Analyse (T);
+
+                  Asm_Generation.Create_File(Asm_FileName); -- need to be created here because it uses Nb_Var from Semantic_Analyse
+
+                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+
                   if Is_Debug_Mode then
                      Syntaxic_Analysis.Debug_Print_Tree (T);
                      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
                   end if;
 
-                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
 
                end;
 
