@@ -2,7 +2,8 @@ with Lexical_Analysis;
 with Ada.Text_IO;
 with Ada.Strings.Fixed;
 with Tree_Graphviz;
-
+with Error_Log;
+use Error_Log;
 package body Syntaxic_Analysis is
 
    Op_Table : array (Operation_Token) of Operation_Record_Type;
@@ -67,8 +68,15 @@ package body Syntaxic_Analysis is
    end Init;
 
    function G return Tree.Tree is
+      N : constant Tree.Tree := I;
    begin
-      return I;
+      if not Lexical_Analysis.EOF then
+         Error(msg => "End of file expected here",
+               Line => Lexical_Analysis.Get_Current_Token.Line);
+         raise Compilation_Error with "End of file expected here";
+      else
+         return N;
+      end if;
    end G;
 
    function E (Min_Priority : Priority := Priority (0)) return Tree.Tree is
@@ -257,9 +265,9 @@ package body Syntaxic_Analysis is
             return T;
          end;
       else
-         Lexical_Analysis.Error (msg  => "An atomic was expected here",
-                                 Line => Lexical_Analysis.Get_Current_Token.Line);
-         raise Constraint_Error;
+         Error (msg  => "An atomic was expected here",
+                Line => Lexical_Analysis.Get_Current_Token.Line);
+         raise Compilation_Error;
       end if;
    end A;
 

@@ -3,6 +3,8 @@ use Ada.Text_IO;
 with Ada.Strings.Fixed;
 with Ada.Containers;
 with Semantic_Analysis;
+with Error_Log;
+use Error_Log;
 package body Asm_Generation is
    
    File : File_Type;
@@ -76,14 +78,14 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Operation_Node_Enum_Type =>
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
-                 raise Constraint_Error with "AST invalid";
+                 raise Compilation_Error with "AST invalid";
               end if;
             Generate_Asm (Syntaxic_Analysis.Tree.First_Child(C));
             Generate_Asm (Syntaxic_Analysis.Tree.Last_Child(C));
             Put_Line (File, Get_Asm_Instruction (Node.Node_Type));      
          when Syntaxic_Analysis.Node_Drop =>
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Constraint_Error with "AST invalid";
+                 raise Compilation_Error with "AST invalid";
               end if;
             Generate_Asm (Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line(File, "drop");
@@ -94,7 +96,7 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Node_Debug =>
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Constraint_Error with "AST invalid";
+                 raise Compilation_Error with "AST invalid";
               end if;
             Generate_Asm (Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "dbg");
@@ -112,7 +114,7 @@ package body Asm_Generation is
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
                if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
-                  raise Constraint_Error with "Left operand is not a variable";
+                  raise Compilation_Error with "Left operand is not a variable";
                end if;
                Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                Put_Line (File, "dup");

@@ -1,8 +1,9 @@
 with Ada.Containers.Hashed_Maps;
 with Ada.Containers.Indefinite_Vectors;
 with Lexical_Analysis;
-with Ada.Text_IO;
-use Ada.Text_IO;
+with Error_Log;
+use Error_Log;
+with Ada.Exceptions;
 package body Semantic_Analysis is
    
    Nb_Var : Natural := 0;
@@ -33,13 +34,23 @@ package body Semantic_Analysis is
          case N.Node_Type is
          when Syntaxic_Analysis.Node_Var_Decl =>
 
-            Declare_Var (Var =>(Idx => V.Element(N.Var_Key)));
-            
+            begin
+               Declare_Var (Var =>(Idx => V.Element(N.Var_Key)));
+            exception
+               when e : Compilation_Error =>
+                  Error (MSg => Ada.Exceptions.Exception_Message(e),
+                         Line => N.Line);
+            end;
+               
          when Syntaxic_Analysis.Node_Var_Ref =>
             declare
                s : constant Natural := Search_Var (Var => (Idx => V.Element(N.Ref_Var_Key)));
             begin
                N.Var_Stack_Index := s;
+            exception
+               when e : Compilation_Error =>
+                  Error (MSg => Ada.Exceptions.Exception_Message(e),
+                         Line => N.Line);
             end;
             Syntaxic_Analysis.Tree.Replace_Element (Container => T,
                                                     Position  => C,
@@ -55,6 +66,9 @@ package body Semantic_Analysis is
       
    begin
       AST_Analyse_Node (Syntaxic_Analysis.Tree.First_Child (T.Root));
+      if not Vec.Is_Empty (Var_Vec) then
+         raise Compilation_Error with "missing curly bracket somewhere";
+      end if;
    end AST_Analyse;
 
    -- declare a variable
@@ -66,9 +80,8 @@ package body Semantic_Analysis is
       end if;
       M := Var_Vec.Last_Element;
       if M.Contains(Var) then
-         raise Constraint_Error with "2 declarations of the same variables";
+         raise Compilation_Error with "2 declarations of the same variable : " & Var.Idx'Image;
       else
-         Put_Line ("Symbol " & Var.Idx'Image & " inserted with value " & Nb_Var'Image);
          M.Insert (Var, Nb_Var);
          Var_Vec.Replace_Element(Var_Vec.Last_Index, M);
          Nb_Var := Nb_Var + 1; 
@@ -80,17 +93,8 @@ package body Semantic_Analysis is
       M : Map.Map;
       Last_Idx : Integer;
    begin
-      Put_Line ("Symbol " & Var.Idx'Image & " Searched");
-      for M of Var_Vec loop
-         for E of M loop
-            Put (E'Image);
-         end loop;
-         New_Line;
-      end loop;
-      New_Line;
-      
       if Vec.Is_Empty (Var_Vec) then
-         raise Constraint_Error with "Search in a empty stack";
+         raise Compilation_Error with "Search in a empty stack";
       end if;
       
       Last_Idx := Vec.Last_Index (Var_Vec);
@@ -98,12 +102,11 @@ package body Semantic_Analysis is
       while Last_Idx >= 0 loop
          M := Var_Vec.Element (Last_Idx);
          if M.Contains(Var) then
-            Put_Line ("return " & Map.Element (M ,Var)'Image);
             return Map.Element (M, Var);
          end if;
          Last_Idx := Last_Idx - 1; 
       end loop;
-      raise Constraint_Error with "Variable not found";
+      raise Compilation_Error with "this variable is not declare";
    end Search_Var;
    
    procedure Add_Scope is 
@@ -115,7 +118,7 @@ package body Semantic_Analysis is
    procedure Rem_Scope is
    begin
       if Vec.Is_Empty (Var_Vec) then
-         raise Constraint_Error with "removing last scope on a empty stack";
+         raise Compilation_Error with "removing last scope on a empty stack";
       end if;
       Vec.Delete_Last (Var_Vec);
    end Rem_Scope;

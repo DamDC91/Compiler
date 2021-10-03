@@ -3,6 +3,8 @@ with Ada.Strings.Unbounded;
 with Ada.Characters.Handling;
 with Ada.Characters.Latin_1;
 with Ada.Text_IO;
+with Error_Log; 
+use Error_Log;
 package body Lexical_Analysis is
 
    File_Content : Ada.Strings.Unbounded.Unbounded_String;
@@ -111,7 +113,7 @@ package body Lexical_Analysis is
                                 Token_Type => Token.Tok_Debug,  -- Temp
                                 Line => Line);
                      else
-                        raise Constraint_Error; -- impossible
+                        raise Program_Error; -- impossible
                      end if;
                   else
                      declare
@@ -232,7 +234,7 @@ package body Lexical_Analysis is
             else
                Error (msg  => "a second '|' was expected",
                       Line => Line);
-               raise Constraint_Error;
+               raise Compilation_Error;
             end if;
 
          elsif char = ',' then
@@ -292,7 +294,7 @@ package body Lexical_Analysis is
                if Is_Letter_Or_Underscore (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) then
                   Error (msg  => "invalid constant",
                          Line => Line);
-                  raise Constraint_Error;
+                  raise Compilation_Error;
                end if;
                
                Index := Index + 1;
@@ -308,7 +310,7 @@ package body Lexical_Analysis is
          else
             Error (msg  => "Unexpected Token",
                    Line => Line);
-            raise Constraint_Error;
+            raise Compilation_Error;
          end if;
       end;
    end Get_Token;
@@ -351,13 +353,9 @@ package body Lexical_Analysis is
    begin
       if not Check_Token(Token_Type) then
          Error(Token_Type'Image & " was excpected here", Line);
+         raise Error_Log.Compilation_Error;
       end if;
    end Accept_Token;
-
-   procedure Error(msg : String; Line : Positive) is
-   begin
-      Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "[Error] : " & msg & " l:" & Line'Image);
-   end Error;
 
    function EOF return Boolean is
       use type Token.Token_Type_Enum_Type;
