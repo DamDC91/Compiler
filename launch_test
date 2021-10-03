@@ -11,28 +11,34 @@ compiler = os.path.abspath("./bin/main")
 msm = os.path.abspath("../machine/msm/msm")
 
 os.chdir("./test")
+align = 25
+
+print("testing...")
 
 for test_dir_name in os.listdir("."):
     if test_dir_name == "fuzzing_exp":
         continue
 
-    print("==== " + BLUE + test_dir_name + ENDC + " ====")
+    print("-" * 10 + " " + BLUE + test_dir_name + ENDC + " " + "-" * 10)
     os.chdir(test_dir_name)
     for test_name in os.listdir("."):
+        print_test_name = test_name + (" " * (align - len(test_name)))
 
         os.chdir(test_name)
         p=""
         try:
             p = subprocess.check_output(compiler + ' -d test.c', stderr = subprocess.STDOUT, shell = True)
         except:
-            print(test_name + RED + " [ko]" + ENDC + " (failed to run the compiler...)")
+            print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the compiler...)")
+            p = subprocess.check_output('rm -f test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
             os.chdir("..")
             continue;
 
         try:
             p = subprocess.check_output(msm + ' test.asm', stderr = subprocess.STDOUT, shell = True)
         except:
-            print(test_name + RED + " [ko]" + ENDC + " (failed to run the asm...)")
+            print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the asm...)")
+            p = subprocess.check_output('rm -f test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
             os.chdir("..")
             continue;
 
@@ -41,15 +47,16 @@ for test_dir_name in os.listdir("."):
             f = open("excepted.txt", 'r')
             s = f.read()
         except:
-            print(test_name + RED + " [ko]" + ENDC + " (failed to open excepted.txt...)")
+            print(print_test_name + RED + " [ko]" + ENDC + " (failed to open excepted.txt...)")
+            p = subprocess.check_output('rm -f test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
             os.chdir("..")
             continue;
 
         if s == p:
-            print(test_name + GREEN + " [ok]" + ENDC)
-            p = subprocess.check_output('rm test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+            print(print_test_name + GREEN + " [ok]" + ENDC)
+            p = subprocess.check_output('rm -f test.asm tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
         else:
-            print(test_name + RED + " [ko]" + ENDC)
+            print(print_test_name + RED + " [ko]" + ENDC)
             
         os.chdir("..")
     os.chdir("..")
