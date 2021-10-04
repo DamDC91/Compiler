@@ -127,7 +127,12 @@ package body Lexical_Analysis is
                            Association_Table_Vector.Append(Last_Id_Value);
                            Last_Id_Value := Last_Id_Value + 1;
                         end if;
-
+                        
+                        if Is_Digit (Id(Id'First)) then
+                           Error (Msg  => "Invalid variable name",
+                                  Line => Line);
+                           raise Compilation_Error with "Invalid variable name";
+                        end if;
 
                         return (Has_Value => True,
                                 Token_Type => Token.Tok_Id,
@@ -286,11 +291,13 @@ package body Lexical_Analysis is
             declare
                buffer : Ada.Strings.Unbounded.Unbounded_String := Ada.Strings.Unbounded.To_Unbounded_String ("" & char);
             begin
-               while Is_Digit(Ada.Strings.Unbounded.Element(File_Content, Index + 1)) loop
+               -- TODO handled hex and bin constant
+               while Is_Digit(Ada.Strings.Unbounded.Element(File_Content, Index + 1))  loop
                   Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
                   Index := Index + 1;
                end loop;
                
+            
                if Is_Letter_Or_Underscore (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) then
                   Error (msg  => "invalid constant",
                          Line => Line);
@@ -298,10 +305,32 @@ package body Lexical_Analysis is
                end if;
                
                Index := Index + 1;
-               return (Has_Value => True, 
-                       Token_Type => Token.Tok_Const,
-                       Value => Natural'Value (Ada.Strings.Unbounded.To_String (buffer)),
-                       Line => Line);
+               declare
+                  --handle constant overflow like gcc
+                  Val_Read : Long_Long_Integer;
+                  Val : Integer;
+               begin
+                  begin
+                     Val_Read :=  Long_Long_Integer'Value (Ada.Strings.Unbounded.To_String (buffer));
+                  exception
+                     when others =>
+                        Error(Msg  => "constant value is too big",
+                              Line => Line);
+                        raise Compilation_Error with "constant value is to big";
+                  end;
+                  
+                  if Val_Read > Long_Long_Integer(Integer'Last) then
+                     Warning (Msg => "constant overflow",
+                              Line => Line);
+                     val := Integer (Val_Read mod (Long_Long_Integer (Integer'Last)) -1) + Integer'First;
+                  else
+                     val := Natural (Val_Read);
+                  end if;
+                  return (Has_Value => True, 
+                          Token_Type => Token.Tok_Const,
+                          Value => Val,
+                          Line => Line);
+               end;
             end;
          elsif char = Ada.Characters.Latin_1.EOT then
             return (Has_Value => False,

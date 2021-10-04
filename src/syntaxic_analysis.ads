@@ -39,7 +39,7 @@ package Syntaxic_Analysis is
       Line      : Positive;
       case Node_Type is
          when Node_Constant =>
-            Value : Natural;
+            Value : Integer; -- can be negative if overflow
          when Node_Var_Decl =>
             Var_Key : Natural;
          when Node_Var_Ref =>

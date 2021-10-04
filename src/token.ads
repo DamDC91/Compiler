@@ -54,7 +54,7 @@ package Token is
       Token_Type : Token_Type_Enum_Type;
       Line       : Positive;
       case Has_Value is
-         when True => Value : Natural;
+         when True => Value : Integer;
          when False => null;
       end case;
    end record;

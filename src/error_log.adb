@@ -27,4 +27,21 @@ package body Error_Log is
       Close(File);
    end Error;
 
+
+   procedure Warning (Msg : String; Line : Natural) is
+      FileName : constant string := To_String (Current_FileName);
+      File : File_Type;
+   begin
+      Put_Line (Standard_Error, FileName & ":" & Line'Image & ": Warning " & Msg);
+
+      Open(File, In_File, FileName);
+      if Line > 1 then
+         Skip_Line (File => File,
+                    Spacing => Ada.Text_IO.Count (Line-1));
+      end if;
+      Put_Line(Standard_Error, "   " & Line'Image & " | " & Get_Line(File));
+
+      Close(File);
+   end Warning;
+
 end Error_Log;
