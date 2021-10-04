@@ -291,11 +291,48 @@ package body Lexical_Analysis is
             declare
                buffer : Ada.Strings.Unbounded.Unbounded_String := Ada.Strings.Unbounded.To_Unbounded_String ("" & char);
             begin
-               -- TODO handled hex and bin constant
-               while Is_Digit(Ada.Strings.Unbounded.Element(File_Content, Index + 1))  loop
-                  Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
+               
+               --hex value
+               If char = '0' and To_Lower (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) = 'x' then
+                  Buffer :=  Ada.Strings.Unbounded.To_Unbounded_String ("16#");
                   Index := Index + 1;
-               end loop;
+                  
+                  while Is_Digit(Ada.Strings.Unbounded.Element(File_Content, Index + 1)) or 
+                  (Ada.Strings.Unbounded.Element(File_Content, Index + 1) >= 'a' and
+                  Ada.Strings.Unbounded.Element(File_Content, Index + 1) <= 'f') loop
+                     Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
+                     Index := Index + 1;
+                  end loop;
+                  Ada.Strings.Unbounded.Append(buffer,"#");
+                  
+               -- bin value
+               elsif char = '0' and To_Lower (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) = 'b' then
+                  Buffer :=  Ada.Strings.Unbounded.To_Unbounded_String ("2#");
+                  Index := Index + 1;
+                  
+                  while Ada.Strings.Unbounded.Element(File_Content, Index + 1) = '0' or Ada.Strings.Unbounded.Element(File_Content, Index + 1) = '1'  loop
+                     Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
+                     Index := Index + 1;
+                  end loop;
+                  Ada.Strings.Unbounded.Append(buffer,"#");
+                  
+               -- base 8
+               elsif char = '0' and (Ada.Strings.Unbounded.Element(File_Content, Index + 1) >= '0' and Ada.Strings.Unbounded.Element(File_Content, Index + 1) <= '7')   then
+                  Buffer :=  Ada.Strings.Unbounded.To_Unbounded_String ("8#");
+                  
+                  while Ada.Strings.Unbounded.Element(File_Content, Index + 1) >= '0' and Ada.Strings.Unbounded.Element(File_Content, Index + 1) <= '7'  loop
+                     Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
+                     Index := Index + 1;
+                  end loop;
+                  Ada.Strings.Unbounded.Append(buffer,"#");
+                  
+               -- base 10 value   
+               else
+                  while Is_Digit(Ada.Strings.Unbounded.Element(File_Content, Index + 1))  loop
+                     Ada.Strings.Unbounded.Append (Buffer, "" &  Ada.Strings.Unbounded.Element(File_Content, Index + 1));
+                     Index := Index + 1;
+                  end loop;
+               end if;
                
             
                if Is_Letter_Or_Underscore (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) then
@@ -314,10 +351,11 @@ package body Lexical_Analysis is
                      Val_Read :=  Long_Long_Integer'Value (Ada.Strings.Unbounded.To_String (buffer));
                   exception
                      when others =>
-                        Error(Msg  => "constant value is too big",
+                        Error(Msg  => "constant value is too big " & Ada.Strings.Unbounded.To_String(buffer),
                               Line => Line);
                         raise Compilation_Error with "constant value is to big";
                   end;
+                  
                   
                   if Val_Read > Long_Long_Integer(Integer'Last) then
                      Warning (Msg => "constant overflow",
@@ -326,6 +364,7 @@ package body Lexical_Analysis is
                   else
                      val := Natural (Val_Read);
                   end if;
+               
                   return (Has_Value => True, 
                           Token_Type => Token.Tok_Const,
                           Value => Val,

@@ -28,6 +28,12 @@ package Syntaxic_Analysis is
                                 Node_Var_Ref,
                                 Node_Seq,
 
+                                Node_Cond,
+
+                                Node_Loop,
+                                Node_Break,
+                                Node_Continue,
+
                                 Node_Drop,
                                 Node_Instruction_Block,
                                 Node_Debug); -- temp
@@ -45,6 +51,10 @@ package Syntaxic_Analysis is
          when Node_Var_Ref =>
             Ref_Var_Key : Natural;
             Var_Stack_Index : Natural;
+         when Node_Cond =>
+            Cond_Count : Positive;
+         when Node_Loop =>
+            Loop_Count : Positive;
          when others => null;
       end case;
    end record;

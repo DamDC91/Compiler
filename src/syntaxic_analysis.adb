@@ -8,6 +8,9 @@ package body Syntaxic_Analysis is
 
    Op_Table : array (Operation_Token) of Operation_Record_Type;
 
+   Condition_Count : Positive := 1;
+   Loop_Count : Positive := 1;
+
    function Set_Discriminant (Node_Type : Node_Type_Enum_Type) return Node_Variant_Type is
       pragma Warnings(off, "variable ""Result"" is read but never assigned");
    begin
@@ -265,7 +268,7 @@ package body Syntaxic_Analysis is
             return T;
          end;
       else
-         Error (msg  => "An atomic was expected here",
+         Error (msg  => "An atomic was expected here, found " & Lexical_Analysis.Get_Current_Token.Token_Type'Image,
                 Line => Lexical_Analysis.Get_Current_Token.Line);
          raise Compilation_Error;
       end if;
@@ -357,6 +360,137 @@ package body Syntaxic_Analysis is
                                             Line => Lexical_Analysis.Get_Current_Token.Line,
                                             Var_Key => Lexical_Analysis.Get_Current_Token.Value));
             end loop;
+            return N;
+         end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_If) then
+         Lexical_Analysis.Accept_Token (Token.Tok_Left_Parenthesis);
+         declare
+            Cond_Node : Tree.Tree;
+            E_Node : Tree.Tree := E;
+            I1_Node : Tree.Tree;
+            Pos : Tree.Cursor;
+            Pos_Sub : Tree.Cursor;
+         begin
+            Cond_Node.Insert_Child (Parent => Cond_Node.Root,
+                                    Before => Tree.No_Element,
+                                    New_Item => (Node_Type => Node_Cond,
+                                                 Line => Lexical_Analysis.Get_Current_Token.Line,
+                                                 Cond_Count => Condition_Count),
+                                    Position => Pos);
+
+            Condition_Count := Condition_Count + 1;
+
+            Lexical_Analysis.Accept_Token(Token.Tok_Right_Parenthesis);
+            I1_Node := I;
+
+            Pos_Sub := Tree.First_Child (E_Node.Root);
+            Tree.Splice_Subtree (Target   => Cond_Node,
+                                 Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 Source   => E_Node,
+                                 Position => Pos_Sub);
+
+            Pos_Sub := Tree.First_Child (I1_Node.Root);
+            Tree.Splice_Subtree (Target   => Cond_Node,
+                                 Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 Source   => I1_Node,
+                                 Position => Pos_Sub);
+
+            if Lexical_Analysis.Check_Token(Token.Tok_Else) then
+
+               declare
+                  I2_Node : Tree.Tree := I;
+               begin
+                  Pos_Sub := Tree.First_Child (I2_Node.Root);
+                  Tree.Splice_Subtree (Target   => Cond_Node,
+                                       Parent   => Pos,
+                                       Before   => Tree.No_Element,
+                                       Source   => I2_Node,
+                                       Position => Pos_Sub);
+               end;
+            end if;
+            return Cond_Node;
+         end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_While) then
+         Lexical_Analysis.Accept_Token (Token.Tok_Left_Parenthesis);
+         declare
+            Loop_Node : Tree.Tree;
+            Cond_Node : Tree.Tree;
+            E_Node : Tree.Tree := E;
+            I_Node : Tree.Tree;
+            Pos : Tree.Cursor;
+            Pos_Sub : Tree.Cursor;
+         begin
+            Lexical_Analysis.Accept_Token (Token.Tok_Right_Parenthesis);
+            I_Node := I;
+            Cond_Node.Insert_Child (Parent   => Cond_Node.Root,
+                                    Before   => Tree.No_Element,
+                                    New_Item => (Node_Type => Node_Cond,
+                                                 Line => Lexical_Analysis.Get_Current_Token.Line,
+                                                 Cond_Count => Condition_Count),
+                                    Position    => Pos);
+
+            Condition_Count := Condition_Count + 1;
+
+            Pos_Sub := Tree.First_Child (E_Node.Root);
+            Tree.Splice_Subtree (Target   => Cond_Node,
+                                 Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 Source   => E_Node,
+                                 Position => Pos_Sub);
+
+            Pos_Sub := Tree.First_Child (I_Node.Root);
+            Tree.Splice_Subtree (Target   => Cond_Node,
+                                 Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 Source   => I_Node,
+                                 Position => Pos_Sub);
+
+            Cond_Node.Insert_Child (Parent => Tree.First_Child (Cond_Node.Root),
+                                    Before => Tree.No_Element,
+                                    New_Item => (Node_Type => Node_Break,
+                                                 Line => Lexical_Analysis.Get_Current_Token.Line));
+
+
+            Loop_Node.Insert_Child (Parent   => Loop_Node.Root,
+                                    Before   => Tree.No_Element,
+                                    New_Item => (Node_Type => Node_Loop,
+                                                 Line => Lexical_Analysis.Get_Current_Token.Line,
+                                                 Loop_Count => Loop_Count),
+                                    Position    => Pos);
+
+            Loop_Count := Loop_Count + 1;
+
+            Pos_Sub := Tree.First_Child (Cond_Node.Root);
+            Tree.Splice_Subtree (Target   => Loop_Node,
+                                 Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 Source   => Cond_Node,
+                                 Position => Pos_Sub);
+
+            return Loop_Node;
+         end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_Continue) then
+         declare
+            N : Tree.Tree;
+         begin
+            N.Insert_Child (Parent   => N.Root,
+                            Before   => Tree.No_Element,
+                            New_Item => (Node_Type => Node_Continue,
+                                         Line => Lexical_Analysis.Get_Current_Token.Line));
+            Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
+            return N;
+         end;
+      elsif Lexical_Analysis.Check_Token (Token.Tok_Break) then
+         declare
+            N : Tree.Tree;
+         begin
+            N.Insert_Child (Parent   => N.Root,
+                            Before   => Tree.No_Element,
+                            New_Item => (Node_Type => Node_Break,
+                                         Line => Lexical_Analysis.Get_Current_Token.Line));
+            Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
             return N;
          end;
       else
