@@ -33,6 +33,7 @@ package Syntaxic_Analysis is
                                 Node_Loop,
                                 Node_Break,
                                 Node_Continue,
+                                Node_Label,
 
                                 Node_Drop,
                                 Node_Instruction_Block,
@@ -53,7 +54,7 @@ package Syntaxic_Analysis is
             Var_Stack_Index : Natural;
          when Node_Cond =>
             Cond_Count : Positive;
-         when Node_Loop =>
+         when Node_Loop | Node_Break | Node_Continue | Node_Label =>
             Loop_Count : Positive;
          when others => null;
       end case;

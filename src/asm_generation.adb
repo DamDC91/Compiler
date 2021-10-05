@@ -50,13 +50,14 @@ package body Asm_Generation is
    
 
    
-   procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor; Loop_Nb : Natural := 0) is
+   procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor) is
       Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       use type Ada.Containers.Count_Type;
       
+      
       procedure Call_Generate_Asm (Cu : Syntaxic_Analysis.Tree.Cursor) is
       begin
-         Generate_Asm (C => Cu, Loop_Nb => Loop_Nb);
+         Generate_Asm (C => Cu);
       end Call_Generate_Asm;
    begin
       case Node.Node_Type is
@@ -68,14 +69,14 @@ package body Asm_Generation is
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
                  raise Constraint_Error with "AST invalid";
               end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C), Loop_Nb => Loop_Nb);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "sub");
             
          when Syntaxic_Analysis.Node_Not =>
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
                  raise Constraint_Error with "AST invalid";
               end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C), Loop_Nb => Loop_Nb);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "not");
             
          when Syntaxic_Analysis.Node_Address =>
@@ -87,14 +88,14 @@ package body Asm_Generation is
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
                  raise Compilation_Error with "AST invalid";
               end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C), Loop_Nb => Loop_Nb);
-            Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C), Loop_Nb => Loop_Nb);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
+            Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
             Put_Line (File, Get_Asm_Instruction (Node.Node_Type));      
          when Syntaxic_Analysis.Node_Drop =>
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
                  raise Compilation_Error with "AST invalid";
               end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C), Loop_Nb => Loop_Nb);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line(File, "drop");
          when Syntaxic_Analysis.Node_Instruction_Block =>
 
@@ -105,7 +106,7 @@ package body Asm_Generation is
               if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
                  raise Compilation_Error with "AST invalid";
               end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C), Loop_Nb => Loop_Nb);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "dbg");
             
          when Syntaxic_Analysis.Node_Var_Decl => 
@@ -123,7 +124,7 @@ package body Asm_Generation is
                if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
                   raise Compilation_Error with "Left operand is not a variable";
                end if;
-               Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C), Loop_Nb => Loop_Nb);
+               Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                Put_Line (File, "dup");
                Put_Line (File, "set " & First_Child_Node.Var_Stack_Index'Image);
             end;
@@ -144,34 +145,45 @@ package body Asm_Generation is
             
                Third_Child : constant Syntaxic_Analysis.Tree.Cursor := Syntaxic_Analysis.Tree.Next_Sibling(Second_Child);
             begin
-            
-               Generate_Asm (C => First_Child, Loop_Nb => Loop_Nb);
-               Put_Line (File, "jumpf cond_else_" & Image (Cond_Nb));
-               Generate_Asm (C => Second_Child, Loop_Nb => Loop_Nb);
-               Put_Line (File, "jump cond_end_" & Image (Cond_Nb));
-               Put_Line (File, ".cond_else_" & Image (Cond_Nb));
-               if Syntaxic_Analysis.Tree.Has_Element (Third_Child) then
-                  Generate_Asm(C => Third_Child, Loop_Nb => Loop_Nb);
+               if Syntaxic_Analysis.Tree.Child_Count (C) = 3 then
+                  Generate_Asm (C => First_Child);
+                  Put_Line (File, "jumpf cond_else_" & Image (Cond_Nb));
+                  Generate_Asm (C => Second_Child);
+                  Put_Line (File, "jump cond_end_" & Image (Cond_Nb));
+                  Put_Line (File, ".cond_else_" & Image (Cond_Nb));
+                  Generate_Asm(C => Third_Child);
+                  Put_Line (File, ".cond_end_" & Image (Cond_Nb));
+               else
+                  Generate_Asm (C => First_Child);
+                  Put_Line (File, "jumpf cond_end_" & Image (Cond_Nb));
+                  Generate_Asm (C => Second_Child);
+                  Put_Line (File, ".cond_end_" & Image (Cond_Nb));
                end if;
-               Put_Line (File, ".cond_end_" & Image (Cond_Nb));
             end;
          when Syntaxic_Analysis.Node_Break => 
-            Put_Line (File, "jump end_loop_" & Image(Loop_Nb));
+            Put_Line (File, "jump end_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
             
          when Syntaxic_Analysis.Node_Continue =>
-            Put_Line (File, "jump start_loop_" & Image(Loop_Nb));
+            Put_Line (File, "jump cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
             
+         when Syntaxic_Analysis.Node_Label =>
+            Put_Line (File, ".cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                     Process => Call_Generate_Asm'Access);
          when Syntaxic_Analysis.Node_Loop =>
-            if Syntaxic_Analysis.Tree.Child_Count(C) /= 1 then
-               Raise Compilation_Error with "AST Invalid";
-            end if;
             declare
-               Loop_Nb : Constant Positive := Syntaxic_Analysis.Tree.Element (C).Loop_Count;
+               Current_Loop_Nb : Constant Positive := Syntaxic_Analysis.Tree.Element (C).Loop_Count;
             begin
-               Put_Line (File, ".start_loop_" & Image (Loop_Nb));
-               Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C), Loop_Nb => Loop_Nb);
-               Put_Line (File, "jump start_loop_" & Image (Loop_Nb));
-               Put_Line (File, ".end_loop_" & Image (Loop_Nb));
+               if Syntaxic_Analysis.Tree.Child_Count(C) = 1 or Syntaxic_Analysis.Tree.Child_Count (C) = 3 then
+                  Put_Line (File, ".start_loop_" & Image (Current_Loop_Nb));
+                  
+                  Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                           Process => Call_Generate_Asm'Access);
+                  Put_Line (File, "jump start_loop_" & Image (Current_Loop_Nb));
+                  Put_Line (File, ".end_loop_" & Image (Current_Loop_Nb));               
+               else
+                  Raise Compilation_Error with "AST Invalid";
+               end if;
             end;
       end case;
    end Generate_Asm;

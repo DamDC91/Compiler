@@ -56,15 +56,14 @@ begin
                begin
                   Semantic_Analysis.AST_Analyse (T);
 
-                  Asm_Generation.Create_File(Asm_FileName); -- need to be created here because it uses Nb_Var from Semantic_Analyse
-
-                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
-
                   if Is_Debug_Mode then
                      Syntaxic_Analysis.Debug_Print_Tree (T);
                      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
                   end if;
 
+                  Asm_Generation.Create_File(Asm_FileName); -- need to be created here because it uses Nb_Var from Semantic_Analyse
+
+                  Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
 
                end;
 

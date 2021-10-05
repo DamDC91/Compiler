@@ -5,6 +5,6 @@ package Asm_Generation is
    
    procedure Close_File;
   
-   procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor; Loop_Nb : Natural := 0);
+   procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor);
 
 end Asm_Generation;
