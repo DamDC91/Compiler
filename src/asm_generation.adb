@@ -5,22 +5,25 @@ with Ada.Containers;
 with Semantic_Analysis;
 with Error_Log;
 use Error_Log;
+with Lexical_Analysis;
 package body Asm_Generation is
    
    File : File_Type;
+   
    
    procedure Create_File (FileName : String) is
    begin      
       Create (File => File,
               Mode => Out_File,
               Name => FileName);
-      Put_Line (File, ".start");
-      Put_Line (File , "resn " & Semantic_Analysis.Get_Nb_Var'Image);
    end Create_File;
    
    procedure Close_File is
    begin
       --Put_Line (File, "dbg"); -- print top of the stck
+      Put_Line (File, ".start");
+      Put_Line (File, "prep main");
+      Put_Line (File, "call 0");
       Put_Line (File, "halt");
       Close (File);
    end Close_File;
@@ -185,6 +188,18 @@ package body Asm_Generation is
                   Raise Compilation_Error with "AST Invalid";
                end if;
             end;
+         when Syntaxic_Analysis.Node_Call =>
+            Put_Line (File, "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                     Process => Call_Generate_Asm'Access);
+            Put_Line (File, "call " & Integer (Syntaxic_Analysis.Tree.Child_Count (C))'Image);
+         when Syntaxic_Analysis.Node_Func =>
+            Put_Line (File, "." & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Name_Key));
+            Put_Line (File, "resn " & Node.Nb_Var'Image);
+            Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child (C));
+            Put_Line (File, "push 0");
+            Put_Line (File, "ret");
+            
       end case;
    end Generate_Asm;
    

@@ -29,6 +29,8 @@ package Syntaxic_Analysis is
                                 Node_Seq,
 
                                 Node_Cond,
+                                Node_Call,
+                                Node_Func,
 
                                 Node_Loop,
                                 Node_Break,
@@ -56,6 +58,11 @@ package Syntaxic_Analysis is
             Cond_Count : Positive;
          when Node_Loop | Node_Break | Node_Continue | Node_Label =>
             Loop_Count : Positive;
+         when Node_Func =>
+            Name_Key : Natural;
+            Nb_Var : Natural;
+         when Node_Call =>
+            Ref_Func_Key : Natural;
          when others => null;
       end case;
    end record;
@@ -82,6 +89,8 @@ package Syntaxic_Analysis is
    function S return Tree.Tree;
 
    function I return Tree.Tree;
+
+   function F return Tree.Tree;
 
    procedure Init;
 

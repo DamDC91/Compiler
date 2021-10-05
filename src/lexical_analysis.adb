@@ -27,7 +27,7 @@ package body Lexical_Analysis is
    File_Info : Ada.Text_IO.File_Type;
    
    
-   function Get_Association_Table return Vector_Association_Table.Vector is (Association_Table_Vector);
+   function Get_Str_From_Assoc_Table (Id : Positive) return String is (Association_Table_Vector(Id));
 
    function Is_Letter_Or_Underscore (c : Character) return boolean is (Ada.Characters.Handling.Is_Letter (c) or c = '_');
 
@@ -124,7 +124,7 @@ package body Lexical_Analysis is
                         else
                            Id_Value :=Last_Id_Value;
                            Association_Table.Insert (Id, Id_Value);
-                           Association_Table_Vector.Append(Last_Id_Value);
+                           Association_Table_Vector.Append(Id);
                            Last_Id_Value := Last_Id_Value + 1;
                         end if;
                         

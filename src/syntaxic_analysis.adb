@@ -71,7 +71,7 @@ package body Syntaxic_Analysis is
    end Init;
 
    function G return Tree.Tree is
-      N : constant Tree.Tree := I;
+      N : constant Tree.Tree := F;
    begin
       if not Lexical_Analysis.EOF then
          Error(msg => "End of file expected here",
@@ -250,16 +250,47 @@ package body Syntaxic_Analysis is
          end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Id) then
          declare
-            T : Tree.Tree;
-            begin
-               T.Insert_Child (Parent   => T.Root,
-                               Before   => Tree.No_Element,
-                               New_Item => (Node_Type => Node_Var_Ref,
-                                            Line => Lexical_Analysis.Get_Current_Token.Line,
-                                            Ref_Var_Key => Lexical_Analysis.Get_Current_Token.Value,
-                                            Var_Stack_Index => 0));
-               return T;
-            end;
+            Id : constant Token.Token_Record_Type := Lexical_Analysis.Get_Current_Token;
+         begin
+            if Lexical_Analysis.Check_Token (Token.Tok_Left_Parenthesis) then
+               declare
+                  N : Tree.Tree;
+                  Pos : Tree.Cursor;
+               begin
+                  N.Insert_Child (Parent   => N.Root,
+                                  Before   => Tree.No_Element,
+                                  New_Item => (Node_Type => Node_Call,
+                                               Line => ID.Line,
+                                               Ref_Func_Key => ID.Value),
+                                  Position    => Pos);
+                  while not Lexical_Analysis.Check_Token (Token.Tok_Right_Parenthesis) loop
+                     declare
+                        E1 : Tree.Tree := E;
+                        Pos_Sub : Tree.Cursor := Tree.First_Child (E1.Root);
+                     begin
+                        Tree.Splice_Subtree (Target   => N,
+                                             Parent   => Pos,
+                                             Before   => Tree.No_Element,
+                                             Source   => E1,
+                                             Position => Pos_sub);
+                     end;
+                  end loop;
+                  return N;
+               end;
+            else
+               declare
+                  T : Tree.Tree;
+               begin
+                  T.Insert_Child (Parent   => T.Root,
+                                  Before   => Tree.No_Element,
+                                  New_Item => (Node_Type => Node_Var_Ref,
+                                               Line => Id.Line,
+                                               Ref_Var_Key => Id.Value,
+                                               Var_Stack_Index => 0));
+                  return T;
+               end;
+            end if;
+         end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Left_Parenthesis) then
          declare
             T : constant Tree.Tree := E;
@@ -421,7 +452,7 @@ package body Syntaxic_Analysis is
             I_Node : Tree.Tree;
             Pos : Tree.Cursor;
             Pos_Sub : Tree.Cursor;
-            Current_Loop_Nb : Positive := Loop_Count;
+            Current_Loop_Nb : constant Positive := Loop_Count;
          begin
             Loop_Node.Insert_Child (Parent   => Loop_Node.Root,
                                     Before   => Tree.No_Element,
@@ -493,7 +524,7 @@ package body Syntaxic_Analysis is
             I1 : Tree.Tree;
             Pos: Tree.Cursor;
             Pos_Sub : Tree.Cursor;
-            Current_Loop_Nb : Positive := Loop_Count;
+            Current_Loop_Nb : constant Positive := Loop_Count;
          begin
 
 
@@ -615,7 +646,7 @@ package body Syntaxic_Analysis is
             E1 : Tree.Tree;
             Pos : Tree.Cursor;
             Pos_Sub : Tree.Cursor;
-            Current_Loop_Nb : Positive := Loop_Count;
+            Current_Loop_Nb : constant Positive := Loop_Count;
          begin
             N.Insert_Child (Parent   => N.Root,
                             Before   => Tree.No_Element,
@@ -737,6 +768,56 @@ package body Syntaxic_Analysis is
          end;
       end if;
    end I;
+
+   function F return Tree.Tree is
+   begin
+      Lexical_Analysis.Accept_Token (Token.Tok_Int);
+      Lexical_Analysis.Accept_Token (Token.Tok_Id);
+      declare
+         N : Tree.Tree;
+         Pos : Tree.Cursor;
+         Pos_Sub : Tree.Cursor;
+         I1 : Tree.Tree;
+      begin
+         N.Insert_Child (Parent   => N.Root,
+                         Before   => Tree.No_Element,
+                         New_Item => (Node_Type => Node_Func,
+                                      Line => Lexical_Analysis.Get_Current_Token.Line,
+                                      Name_Key => Lexical_Analysis.Get_Current_Token.Value,
+                                     Nb_Var => 0),
+                         Position => Pos);
+
+         N.Insert_Child (Parent   => Pos,
+                         Before   => Tree.No_Element,
+                         New_Item => (Node_Type => Node_Seq,
+                                      Line => Lexical_Analysis.Get_Current_Token.Line),
+                         Position    => Pos_Sub);
+         Pos := Pos_Sub;
+         Lexical_Analysis.Accept_Token (Token.Tok_Left_Parenthesis);
+         while not Lexical_Analysis.Check_Token (Token.Tok_Right_Parenthesis) loop
+            declare
+               E1 : Tree.Tree := E;
+            begin
+               Pos_Sub := Tree.First_Child (E1.Root);
+               Tree.Splice_Subtree (Target   => N,
+                                    Parent   => Pos,
+                                    Before   => Tree.No_Element,
+                                    Source   => E1,
+                                    Position => Pos_Sub);
+               Lexical_Analysis.Accept_Token (Token.Tok_Comma);
+            end;
+         end loop;
+         I1 := I;
+         Pos := Tree.First_Child (N.Root);
+         Pos_Sub := Tree.First_Child (I1.Root);
+         Tree.Splice_Subtree (Target   => N,
+                              Parent   => Pos,
+                              Before   => Tree.No_Element,
+                              Source   => I1,
+                              Position => Pos_Sub);
+         return N;
+      end;
+   end F;
 
    function Same_Node (L,R : Node_Variant_Type) return Boolean is
       Ok : Boolean := L.Node_Type = R.Node_Type and L.Line = R.Line;
