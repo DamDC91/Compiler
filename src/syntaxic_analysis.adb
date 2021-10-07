@@ -318,7 +318,49 @@ package body Syntaxic_Analysis is
 
    function S return Tree.Tree is
    begin
-      return A;
+      declare
+         Res : Tree.Tree := A;
+      begin
+         while Lexical_Analysis.Check_Token (Token.Tok_Left_Bracket) loop
+            declare
+               E1 : Tree.Tree := E;
+               Tmp : Tree.Tree := Res.Copy;
+               Pos : Tree.Cursor;
+               Pos_Sub : Tree.Cursor;
+            begin
+               Tree.Clear(Res);
+
+               Res.Insert_Child (Parent    => Res.Root,
+                                 Before    => Tree.No_Element,
+                                 New_Item  => (Node_Type => Node_Dereference,
+                                               Line => Lexical_Analysis.Get_Current_Token.Line),
+                                 Position  => Pos);
+               Res.Insert_Child (Parent   => Pos,
+                                 Before   => Tree.No_Element,
+                                 New_Item => (Node_Type => Node_Op_Add,
+                                              Line => Lexical_Analysis.Get_Current_Token.Line),
+                                 Position    => Pos_Sub);
+               Pos := Pos_Sub;
+
+               Pos_Sub := Tree.First_Child (Tmp.Root);
+
+               Tree.Splice_Subtree (Target   => Res,
+                                    Parent   => Pos,
+                                    Before   => Tree.No_Element,
+                                    Source   => Tmp,
+                                    Position => Pos_Sub);
+
+               Pos_Sub := tree.First_Child (E1.Root);
+               Tree.Splice_Subtree (Target   => Res,
+                                    Parent   => Pos,
+                                    Before   => Tree.No_Element,
+                                    Source   => E1,
+                                    Position => Pos_Sub);
+               Lexical_Analysis.Accept_Token (Token.Tok_Right_Bracket);
+            end;
+         end loop;
+         return Res;
+      end;
    end S;
 
 

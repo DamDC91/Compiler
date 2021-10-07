@@ -82,35 +82,52 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Node_Minus_U =>
             Put_Line (File, "push 0");
-              if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Constraint_Error with "AST invalid";
-              end if;
+            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
+               raise Constraint_Error with "AST invalid";
+            end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "sub");
             
          when Syntaxic_Analysis.Node_Not =>
-              if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Constraint_Error with "AST invalid";
-              end if;
+            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
+               raise Constraint_Error with "AST invalid";
+            end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "not");
             
          when Syntaxic_Analysis.Node_Address =>
-            null; --TODO
+            declare
+               Child : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
+               Index : constant Natural := (Child.Var_Stack_Index + 1);
+            begin
+               Put_Line (File, "prep start2");
+               Put_Line (File, "add");
+               Put_Line (File, "prep start2");
+               Put_Line (File, "drop");
+               Put_Line (File, "sub");
+               Put_Line (File, "push " & Index'Image);
+               Put_Line (File, "sub");
+            end;
          when Syntaxic_Analysis.Node_Dereference =>
-            null; --TODO
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
+            if Syntaxic_Analysis.Tree.Has_Element (Syntaxic_Analysis.Tree.Next_Sibling (C)) then -- L value
+               Put_Line (File, "write");
+            else -- R value
+               Put_Line (File, "read");
+            end if;
+
             
          when Syntaxic_Analysis.Operation_Node_Enum_Type =>
-              if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
-                 raise Compilation_Error with "AST invalid";
-              end if;
+            if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
+               raise Compilation_Error with "AST invalid";
+            end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
             Put_Line (File, Get_Asm_Instruction (Node.Node_Type));      
          when Syntaxic_Analysis.Node_Drop =>
-              if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Compilation_Error with "AST invalid";
-              end if;
+            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
+               raise Compilation_Error with "AST invalid";
+            end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line(File, "drop");
          when Syntaxic_Analysis.Node_Instruction_Block =>
@@ -119,9 +136,9 @@ package body Asm_Generation is
                                                      Process => Call_Generate_Asm'Access);
             
          when Syntaxic_Analysis.Node_Debug =>
-              if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-                 raise Compilation_Error with "AST invalid";
-              end if;
+            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
+               raise Compilation_Error with "AST invalid";
+            end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, "dbg");
             
@@ -139,18 +156,25 @@ package body Asm_Generation is
                First_Child_Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (First_Child);
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
-               if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
+               if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref and First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Dereference then
                   raise Compilation_Error with "Left operand is not a variable";
                end if;
-               Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
-               Put_Line (File, "dup");
-               Put_Line (File, "set " & First_Child_Node.Var_Stack_Index'Image);
+               if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
+                  Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
+                  Put_Line (File, "dup");
+                  Put_Line (File, "set " & First_Child_Node.Var_Stack_Index'Image);
+               else
+                  Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
+                  Put_Line (File, "dup");
+                  Generate_Asm (C => First_Child);
+                  --Put_Line (File, "write");
+               end if;
             end;
             
                
          when Syntaxic_Analysis.Node_Seq => 
-                        Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
-                                                                 Process => Call_Generate_Asm'Access);
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                     Process => Call_Generate_Asm'Access);
          when Syntaxic_Analysis.Node_Cond => 
             if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 and Syntaxic_Analysis.Tree.Child_Count (C) /= 3 then
                raise Compilation_Error with "AST invalid";
@@ -204,17 +228,10 @@ package body Asm_Generation is
                end if;
             end;
          when Syntaxic_Analysis.Node_Call =>
-            --  if Node.Ref_Func_Key = 1 then -- putchar
-            --     Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
-            --     Put_Line (File, "send");
-            --  elsif Node.Ref_Func_Key = 2 then --getchar
-            --     Put_Line (File, "recv");
-            --  else
-               Put_Line (File, "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
-               Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+            Put_Line (File, "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
-               Put_Line (File, "call " & Integer (Syntaxic_Analysis.Tree.Child_Count (C))'Image);
-          --  end if;
+            Put_Line (File, "call " & Integer (Syntaxic_Analysis.Tree.Child_Count (C))'Image);
          when Syntaxic_Analysis.Node_Body_Func =>
             New_Line (File); 
             Put_Line (File, "." & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Name_Key));

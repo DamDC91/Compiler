@@ -41,18 +41,12 @@ for test_dir_name in os.listdir("."):
             f = open("command.txt", 'r')
             s = f.readlines()
             try:
-                p = subprocess.check_output(s[0], stderr = subprocess.STDOUT, shell = True)
+                p = Try_Run(print_test_name, s[0], "(failed to run the compiler...)")
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the compiler...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
-                os.chdir("..")
                 continue;
             try:
-                p = subprocess.check_output(s[1], stderr = subprocess.STDOUT, shell = True)
+                p = Try_Run(print_test_name, s[1], "(failed to run the asm...)")
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the asm...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
-                os.chdir("..")
                 continue;
 
             s = ""
@@ -68,19 +62,13 @@ for test_dir_name in os.listdir("."):
 
         else:
             try:
-                p = subprocess.check_output(compiler + ' -d test.c', stderr = subprocess.STDOUT, shell = True)
+                p = Try_Run(print_test_name, compiler + " -d test.c", "(failed to run the compiler...)")
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the compiler...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
-                os.chdir("..")
                 continue;
 
             try:
-                p = subprocess.check_output(msm + ' out.s', stderr = subprocess.STDOUT, shell = True)
+                p = Try_Run(print_test_name, msm + " out.s", "(failed to run the asm...)")
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to run the asm...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
-                os.chdir("..")
                 continue;
 
             s = ""
