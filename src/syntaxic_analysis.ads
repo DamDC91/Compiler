@@ -30,13 +30,13 @@ package Syntaxic_Analysis is
 
                                 Node_Cond,
                                 Node_Call,
-                                Node_Func,
+                                Node_Body_Func,
 
                                 Node_Loop,
                                 Node_Break,
                                 Node_Continue,
                                 Node_Label,
-
+                                Node_Return,
                                 Node_Drop,
                                 Node_Instruction_Block,
                                 Node_Debug); -- temp
@@ -58,7 +58,7 @@ package Syntaxic_Analysis is
             Cond_Count : Positive;
          when Node_Loop | Node_Break | Node_Continue | Node_Label =>
             Loop_Count : Positive;
-         when Node_Func =>
+         when Node_Body_Func =>
             Name_Key : Natural;
             Nb_Var : Natural;
          when Node_Call =>

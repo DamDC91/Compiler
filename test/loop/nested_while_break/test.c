@@ -1,4 +1,4 @@
-{
+int main() {
     int i,j,res;
     i=res=0;
     while(i < 4)

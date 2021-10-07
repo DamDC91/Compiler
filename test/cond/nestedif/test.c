@@ -1,4 +1,4 @@
-{
+int main() {
     int a;
     a= 32;
     if (a > 0) 

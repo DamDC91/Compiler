@@ -1,4 +1,4 @@
-{
+int main() {
     int i,res;
     i=res=0;
     do

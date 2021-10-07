@@ -7,7 +7,10 @@ with Ada.Strings.Unbounded;
 with Ada.Directories;
 with Semantic_Analysis;
 with Error_Log;
-
+with Ada.Command_Line;
+with Ada.Text_IO;
+with Ada.Calendar;
+with Ada.Exceptions;
 procedure main is
 
    package Args is
@@ -27,7 +30,63 @@ procedure main is
 
    end Args;
 
+   Files_Dir : constant String := Ada.Directories.Current_Directory;
+   Command : constant String := Ada.Directories.Full_Name (Ada.Command_Line.Command_Name);
+   Asm_Filename : constant String := Files_Dir & "/out.s";
+   Id : constant Natural := Ada.Strings.Fixed.Index (Source  => Command,
+                                                     Pattern => "/",
+                                                     From    => Command'Last,
+                                                     Going   => Ada.Strings.Backward);
+
+   Runtime_Dir : constant String := (if Id /= 0 then Command(Command'First .. Id) & "../runtime/" else "../runtime/");
+   Runtime_Source_File : constant String := Runtime_Dir & "runtime.c";
+   Runtime_Asm_File : constant String := Runtime_Dir & "runtime.s";
+   Start_File : constant string := Runtime_Dir & "start.s";
+   use type Ada.Calendar.Time;
 begin
+
+
+   Syntaxic_Analysis.Init;
+
+
+   -- Compiling runtime only if the code as been touch since the last compilation
+   Lexical_Analysis.Load(Runtime_Source_File, False);
+   Error_Log.Set_Filename  (Runtime_Source_File);
+   declare
+      T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+   begin
+      Semantic_Analysis.AST_Analyse (T);
+      -- only run syntaxic and semantic analysis for setting loup and cond counter and the symbol table
+      if Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
+         Asm_Generation.Create_File(Filename => Runtime_Asm_File);
+         Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+         Asm_Generation.Close_File;
+         Ada.Text_IO.Put_Line ("runtime compilation is ok");
+      else
+         Ada.Text_IO.Put_Line ("runtime is not recompile");
+      end if;
+
+   exception
+      when e : others =>
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "rutime compilation failed");
+         Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message(e));
+         if Ada.Directories.Exists (Runtime_Asm_File) then
+            Asm_Generation.Close_File;
+            Asm_Generation.Delete_File;
+         end if;
+         raise;
+   end;
+
+
+
+   Asm_Generation.Create_File (Asm_Filename);
+
+   Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
+
+
+   Ada.Directories.Set_Directory (Files_Dir);
+
+
 
    if Args.Parser.Parse then
       declare
@@ -35,17 +94,11 @@ begin
          Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
 
       begin
-         Syntaxic_Analysis.Init;
 
          for i in Files_Array'First ..Files_Array'Last loop
 
             declare
                FileName : constant String := Ada.Strings.Unbounded.To_String (Files_Array (i));
-               Simple_FileName : constant String := Ada.Directories.Simple_Name (FileName);
-               Index : constant Integer := Ada.Strings.Fixed.Index (Source  => Simple_FileName,
-                                                                    Pattern => ".c") - 1;
-               Asm_FileName : constant String := Simple_FileName (Simple_FileName'First..Index) & ".asm";
-
             begin
                Error_Log.Set_Filename  (FileName);
                Lexical_Analysis.Load(FileName, Is_Debug_Mode);
@@ -61,19 +114,23 @@ begin
                      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
                   end if;
 
-                  Asm_Generation.Create_File(Asm_FileName); -- need to be created here because it uses Nb_Var from Semantic_Analyse
-
                   Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
 
                end;
 
             end;
             Lexical_Analysis.Close_Debug;
-            Asm_Generation.Close_File;
+
          end loop;
 
 
       end;
+
+      Asm_Generation.Add_Start (Start_Filename => Start_File);
+
+      Asm_Generation.Close_File;
    end if;
+
+
 
 end main;

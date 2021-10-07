@@ -1,4 +1,4 @@
-{
+int main() {
     int a,b,c,d,e,f,g,h,i,res;
     res = 0;
     for(a = 0; a < 4; a = a + 1)

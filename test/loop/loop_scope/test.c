@@ -1,4 +1,4 @@
-{
+int main() {
     int b,res;
     res = 5;
     b = 1;

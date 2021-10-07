@@ -2,10 +2,10 @@ with Ada.Text_IO;
 use Ada.Text_IO;
 with Ada.Strings.Fixed;
 with Ada.Containers;
-with Semantic_Analysis;
 with Error_Log;
 use Error_Log;
 with Lexical_Analysis;
+with Text_Utils;
 package body Asm_Generation is
    
    File : File_Type;
@@ -14,19 +14,32 @@ package body Asm_Generation is
    procedure Create_File (FileName : String) is
    begin      
       Create (File => File,
-              Mode => Out_File,
+              Mode => Ada.Text_IO.Out_File,
               Name => FileName);
+
    end Create_File;
+   
+   procedure Add_Runtime (Runtime : String) is
+      str : constant String := Text_Utils.Get_File_Content (Runtime);
+   begin
+      Put_Line (File, str(str'First..str'Last-1));      
+   end Add_Runtime;
    
    procedure Close_File is
    begin
-      --Put_Line (File, "dbg"); -- print top of the stck
-      Put_Line (File, ".start");
-      Put_Line (File, "prep main");
-      Put_Line (File, "call 0");
-      Put_Line (File, "halt");
       Close (File);
    end Close_File;
+   
+   procedure Delete_File is
+   begin
+      Delete (File);
+   end Delete_File;
+   
+   procedure Add_Start (Start_Filename : String) is
+      str : constant String := Text_Utils.Get_File_Content (Start_Filename);
+   begin
+      Put_Line (File, str(str'First..str'Last-1)); 
+   end Add_Start;
    
    Function Image (Nb : Integer) return string is (Ada.Strings.Fixed.Trim (Nb'Image, Ada.Strings.Both));
    
@@ -113,7 +126,9 @@ package body Asm_Generation is
             Put_Line (File, "dbg");
             
          when Syntaxic_Analysis.Node_Var_Decl => 
-            null; --nothing to do
+            if Syntaxic_Analysis.Tree.Child_Count (C) = 1 then
+               Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
+            end if;
             
          when Syntaxic_Analysis.Node_Var_Ref => 
             Put_Line (File, "get "& Node.Var_Stack_Index'Image);
@@ -189,15 +204,27 @@ package body Asm_Generation is
                end if;
             end;
          when Syntaxic_Analysis.Node_Call =>
-            Put_Line (File, "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
-            Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+            --  if Node.Ref_Func_Key = 1 then -- putchar
+            --     Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
+            --     Put_Line (File, "send");
+            --  elsif Node.Ref_Func_Key = 2 then --getchar
+            --     Put_Line (File, "recv");
+            --  else
+               Put_Line (File, "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
+               Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
-            Put_Line (File, "call " & Integer (Syntaxic_Analysis.Tree.Child_Count (C))'Image);
-         when Syntaxic_Analysis.Node_Func =>
+               Put_Line (File, "call " & Integer (Syntaxic_Analysis.Tree.Child_Count (C))'Image);
+          --  end if;
+         when Syntaxic_Analysis.Node_Body_Func =>
+            New_Line (File); 
             Put_Line (File, "." & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Name_Key));
             Put_Line (File, "resn " & Node.Nb_Var'Image);
             Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child (C));
             Put_Line (File, "push 0");
+            Put_Line (File, "ret");
+            
+         when Syntaxic_Analysis.Node_Return =>
+            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
             Put_Line (File, "ret");
             
       end case;

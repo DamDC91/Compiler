@@ -1,1 +1,1 @@
-debug 1/0;
+int main() debug 1/0;

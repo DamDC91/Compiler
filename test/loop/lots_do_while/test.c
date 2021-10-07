@@ -1,4 +1,4 @@
-{
+int main() {
     int a,b,c,d,e,f,g,h,i,res;
     a=b=c=d=e=f=g=h=i=res=0;
     do

@@ -1,4 +1,4 @@
-{
+int main() {
     int i,j,res;
     i=res=0;
     for(i = 0; i < 4; i = i + 1)

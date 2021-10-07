@@ -1,4 +1,4 @@
-{
+int main() {
     int i,j,res,k;
     i = j = res = k = 0;
 

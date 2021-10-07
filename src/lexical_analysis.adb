@@ -17,7 +17,7 @@ package body Lexical_Analysis is
 
    Line : Positive := 1;
 
-   Last_Id_Value : Positive := 1;
+   Last_Id_Value : Positive := 3;
 
    Association_Table : Token.Map.Map;
   
@@ -40,21 +40,54 @@ package body Lexical_Analysis is
 
 
    function Get_Token return Token.Token_Record_Type is
-   begin
-      while Ada.Strings.Unbounded.Element(File_Content, Index) = ' ' or
-        Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.HT or
-        Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF
-      loop
-         if Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF then
+      Rem_Space : Boolean := True;
+   begin      
+  
+      while Rem_Space loop
+         Rem_Space := False;
+         while Ada.Strings.Unbounded.Element(File_Content, Index) = ' ' or
+         Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.HT or
+         Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF
+         loop
+         
+            if Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF then
+               Line := Line + 1;
+            end if;
+         
+            Index:=Index+1;
+         end loop;
+      
+               
+         if Ada.Strings.Unbounded.Element (File_Content, Index) = '/' and ( (Index + 1 < Ada.Strings.Unbounded.Length (File_Content)) and then
+                                                                          Ada.Strings.Unbounded.Element (File_Content, Index + 1) = '/') then
+            Rem_Space := True;
+            Index := Index + 1;
+            while not (Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF) loop
+               Index := Index + 1;
+            end loop;
             Line := Line + 1;
          end if;
-         Index:=Index+1;
+      
+         if Ada.Strings.Unbounded.Element (File_Content, Index) = '/' and ( (Index + 1 < Ada.Strings.Unbounded.Length (File_Content)) and then
+                                                                          Ada.Strings.Unbounded.Element (File_Content, Index + 1) = '*') then
+            Rem_Space := True;
+            Index := Index + 1;
+            while not (Ada.Strings.Unbounded.Element(File_Content, Index) = '*' and ((Index + 1 < Ada.Strings.Unbounded.Length (File_Content)) and then
+                                                                                    Ada.Strings.Unbounded.Element (File_Content, Index + 1) = '/')) loop
+               if Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF then
+                  Line := Line + 1;
+               end if;
+               Index := Index + 1;
+            end loop;
+            Index := Index + 2;
+         end if;
+      
       end loop;
+      
       declare
          char : constant Character := Ada.Strings.Unbounded.Element (File_Content, Index);
          use Ada.Characters.Handling;
       begin
-
          if Is_Letter_Or_Underscore (char) then
             declare
                buffer : Ada.Strings.Unbounded.Unbounded_String := Ada.Strings.Unbounded.To_Unbounded_String ("" & char);
@@ -376,7 +409,7 @@ package body Lexical_Analysis is
                     Token_Type => Token.Tok_EOF,
                     Line => Line);
          else
-            Error (msg  => "Unexpected Token",
+            Error (msg  => "Unexpected Token " & Ada.Strings.Unbounded.Element (File_Content, Index),
                    Line => Line);
             raise Compilation_Error;
          end if;
@@ -386,6 +419,16 @@ package body Lexical_Analysis is
 
    procedure Load(FileName : String; Debug : Boolean) is
    begin
+      if Index = 1 then
+         Association_Table_Vector.Append ("putchar");
+         Association_Table_Vector.Append ("getchar");
+         Association_Table.Insert (Key      => "putchar",
+                                   New_Item => 1);
+         Association_Table.Insert (Key      => "getchar",
+                                   New_Item => 2);
+      end if;
+      Index := 1;
+      Line := 1;
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
       Next_Token := Get_Token;
       Debug_Info := Debug;
@@ -420,7 +463,7 @@ package body Lexical_Analysis is
    procedure Accept_Token(Token_Type : Token.Token_Type_Enum_Type) is
    begin
       if not Check_Token(Token_Type) then
-         Error(Token_Type'Image & " was excpected here", Line);
+         Error(Token_Type'Image & " was excpected here, found " & Get_Current_Token.Token_Type'Image, Line);
          raise Error_Log.Compilation_Error;
       end if;
    end Accept_Token;

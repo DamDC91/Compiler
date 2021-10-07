@@ -6,12 +6,15 @@ package Semantic_Analysis is
    type Symbol_Type_Enum_Type is (Symbol_Var, Symbol_Func);
    
    type Symbol (Symbol_Type : Symbol_Type_Enum_Type := Symbol_Var) is record
-
+      Decl_Line : Positive;
+      Is_Referenced : Boolean;
       case Symbol_Type is
          when Symbol_Func =>
             Nb_Args : Natural;
          when Symbol_Var => 
             Idx : Natural;
+            Is_Init : Boolean;
+            Is_Arg_Var : Boolean;
       end case;
    end record;
    
@@ -20,6 +23,8 @@ package Semantic_Analysis is
    
    -- search a variable and return its index
    function Search_Ident (Id : Natural) return Symbol;
+   
+   procedure Update_Element (Id : Natural; El : Symbol);
    
    procedure Add_Scope;
    

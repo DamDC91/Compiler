@@ -1,0 +1,2 @@
+../../../bin/main test.c
+../../../../machine/msm/msm out.s < excepted.txt
