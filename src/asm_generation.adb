@@ -110,12 +110,16 @@ package body Asm_Generation is
             end;
          when Syntaxic_Analysis.Node_Dereference =>
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
-            if Syntaxic_Analysis.Tree.Has_Element (Syntaxic_Analysis.Tree.Next_Sibling (C)) then -- L value
-               Put_Line (File, Tab & "write");
-            else -- R value
-               Put_Line (File, Tab & "read");
-            end if;
-
+            declare
+               use type Syntaxic_Analysis.Node_Type_Enum_Type;
+            begin
+               if Syntaxic_Analysis.Tree.Has_Element (Syntaxic_Analysis.Tree.Next_Sibling (C)) and
+               Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.Parent (C)).Node_Type = Syntaxic_Analysis.Node_Op_Assignment then -- L value
+                  Put_Line (File, Tab & "write");
+               else -- R value
+                  Put_Line (File, Tab & "read");
+               end if;
+            end;
             
          when Syntaxic_Analysis.Operation_Node_Enum_Type =>
             if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
@@ -148,7 +152,7 @@ package body Asm_Generation is
             end if;
             
          when Syntaxic_Analysis.Node_Var_Ref => 
-            Put_Line (File, Tab & "get "& Node.Var_Stack_Index'Image);
+            Put_Line (File, Tab & "get "& Node.Var_Stack_Index'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Var_Key));
             
          when Syntaxic_Analysis.Node_Op_Assignment =>
             declare
@@ -162,7 +166,7 @@ package body Asm_Generation is
                if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
                   Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
-                  Put_Line (File, Tab & "set " & First_Child_Node.Var_Stack_Index'Image);
+                  Put_Line (File, Tab & "set " & First_Child_Node.Var_Stack_Index'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (First_Child_Node.Ref_Var_Key));
                else
                   Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");

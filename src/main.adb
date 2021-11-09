@@ -56,6 +56,13 @@ begin
       T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
    begin
       Semantic_Analysis.AST_Analyse (T);
+
+
+      Syntaxic_Analysis.Debug_Print_Tree (T);
+      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
+      Lexical_Analysis.Close_Debug;
+
+
       -- only run syntaxic and semantic analysis for setting loup and cond counter and the symbol table
       if Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
          Asm_Generation.Create_File(Filename => Runtime_Asm_File);
@@ -76,7 +83,6 @@ begin
          end if;
          raise;
    end;
-
 
 
    Asm_Generation.Create_File (Asm_Filename);
