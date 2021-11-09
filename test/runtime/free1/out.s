@@ -570,3 +570,66 @@
     ret
     push 0
     ret
+
+
+.main
+    resn  1
+    prep malloc
+    push 12
+    call  1
+    dup
+    set  0 ; a
+    prep printf
+    get  0 ; a
+    push 0
+    push 1
+    sub
+    add
+    read
+    call  1
+    drop
+    prep printf
+    get  0 ; a
+    push 12
+    add
+    read
+    call  1
+    drop
+    prep free
+    get  0 ; a
+    call  1
+    drop
+    prep printf
+    get  0 ; a
+    push 0
+    push 1
+    sub
+    add
+    read
+    call  1
+    drop
+    prep printf
+    get  0 ; a
+    push 12
+    add
+    read
+    call  1
+    drop
+    push 0
+    ret
+.start
+    prep start2
+    call 0
+    prep main
+    call 0
+    halt
+
+.putchar
+    send 
+    push 0
+    ret
+
+.getchar
+    recv
+    ret
+

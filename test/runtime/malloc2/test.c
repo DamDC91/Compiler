@@ -6,5 +6,7 @@ int main()
     int b = malloc(8);
     printf(b[-1]);
     printf(b[8]);
-    int i;
+    /*int i;
+    for(i = -1; i < 30; i=i+1)
+        printf(a[i]);*/
 }

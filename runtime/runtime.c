@@ -65,17 +65,11 @@ int malloc(int s)
         s = 2;
 
     int firstFree = *0; 
-    //putchar(70);
-    //printf(firstFree);
     do {
-        int blockSize = *(firstFree-1);
-        /*putchar(70);
-        printf(firstFree);
-        putchar(83);
-        printf(blockSize);*/
+        int blockSize = firstFree[-1];
         if (blockSize >= s) 
         {
-            if (blockSize != *(firstFree + blockSize))
+            if (blockSize != firstFree[blockSize])
             {
                 printf(-1);
                 int err = 1/0;
@@ -83,84 +77,74 @@ int malloc(int s)
             }
             if (blockSize <= s + 4) //  the remaining size is tiny, no spliting
             {
-                *(firstFree - 1) = -blockSize;
-                *(firstFree + blockSize) = -blockSize; 
+                firstFree[-1] = -blockSize;
+                firstFree[blockSize] = -blockSize; 
 
-                int LeftBlockPtr = firstFree;
-                int LeftBlockSize = *(LeftBlockPtr-1);
-                int RightBlockPtr = firstFree + blockSize;
+                int LeftBlockPtr = firstFree[0];
+                int RightBlockPtr = firstFree[blockSize-1];
                 if(LeftBlockPtr)
-                    *(LeftBlockPtr + LeftBlockSize - 1) = RightBlockPtr;
+                {
+                    int LeftBlockSize = LeftBlockPtr[-1];
+                    LeftBlockPtr[LeftBlockSize - 1] = RightBlockPtr;
+                }
+                else
+                    *0 = RightBlockPtr;
                 if(RightBlockPtr)
-                    *(RightBlockPtr) = LeftBlockPtr;
+                    RightBlockPtr[0] = LeftBlockPtr;
                 return firstFree; 
             }
             else // the remaining size is significant, spiting the block in 2
             {
                 int size = blockSize - s - 2;
-                *(firstFree - 1) = -s;
-                *(firstFree + s) = -s;
+                firstFree[-1] = -s;
+                firstFree[s] = -s;
 
                 int newBlockPtr = firstFree + s + 2;
-                *(newBlockPtr + size) = size;
-                *(newBlockPtr - 1) = size;
-                int LeftBlockPtr = *firstFree;
-                int RightBlockPtr = *(firstFree + blockSize - 1);
-                /*putchar(82);
-                printf(RightBlockPtr);*/
+                newBlockPtr[size] = size;
+                newBlockPtr[-1] = size;
+                int LeftBlockPtr = firstFree[0];
+                int RightBlockPtr = firstFree[blockSize - 1];
 
                 if(LeftBlockPtr)
                 {
-                    int LeftBlockSize = *(LeftBlockPtr - 1);
-                    *(LeftBlockPtr + LeftBlockSize - 1) = newBlockPtr;
+                    int LeftBlockSize = LeftBlockPtr[-1];
+                    LeftBlockPtr[LeftBlockSize - 1] = newBlockPtr;
                 }
                 else
                     *0 = newBlockPtr;
 
                 if(RightBlockPtr)
                 {
-                    *RightBlockPtr = newBlockPtr;
+                    RightBlockPtr[0] = newBlockPtr;
                 }
                 return firstFree;
             }
         }
-        firstFree = *(firstFree + -blockSize -1);
+        firstFree = firstFree[-blockSize -1]; // blocksize is negative
     } while (firstFree != 0);
     return 0;
-    //Error TODO
 }
 
 int free(int p)
 {
-    /*int size = *(p-1);
-    if (size < 0 || size != *(p+size))
+    if (p==0)
+        return 0;
+
+    int size = -p[-1]; 
+
+    if (p[-1] >= 0 || p[-1] != p[abs(size)])
         int err = 1/0;
         //Error TODO
         
-    *(p - 1) = -size;
-    *(p + size) = -size;
 
-    *p = 0;
-    *(p + size - 1) = *0;
-    **0 = p + size - 1;
+    p[size] = size;
+    p[-1] = size;
+
+    p[0] = 0;
+    p[size - 1] = *0;
+
+    **0 = p;
     *0 = p;
-
-    if (*(p + size + 2) < 0) // right block free
-    {
-        int ptrR = p + size + 1;
-        int newSize = size + *(ptrR - 1) + 2;
-        *(p - 1) = newSize;
-        *(p + newSize) = newSize;
-        size = newSize;
-    }
-    if (*(p - 2) < 0) // left block free
-    {
-        int ptrL = *(p - *());
-        int newSize = size + *(ptrL - 1) + 2;
-        *(p - 1) = newSize;
-        *(p + newSize) = newSize;
-        size = newSize;
-    }*/
 }
 
 int start2() 
