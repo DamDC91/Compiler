@@ -45,56 +45,56 @@ procedure main is
    use type Ada.Calendar.Time;
 begin
 
-
-   Syntaxic_Analysis.Init;
-
-
-   -- Compiling runtime only if the code as been touch since the last compilation
-   Lexical_Analysis.Load(Runtime_Source_File, False);
-   Error_Log.Set_Filename  (Runtime_Source_File);
-   declare
-      T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
-   begin
-      Semantic_Analysis.AST_Analyse (T);
-
-
-      Syntaxic_Analysis.Debug_Print_Tree (T);
-      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
-      Lexical_Analysis.Close_Debug;
-
-
-      -- only run syntaxic and semantic analysis for setting loup and cond counter and the symbol table
-      if Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
-         Asm_Generation.Create_File(Filename => Runtime_Asm_File);
-         Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
-         Asm_Generation.Close_File;
-         Ada.Text_IO.Put_Line ("runtime compilation is ok");
-      else
-         Ada.Text_IO.Put_Line ("runtime is not recompile");
-      end if;
-
-   exception
-      when e : others =>
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "rutime compilation failed");
-         Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message(e));
-         if Ada.Directories.Exists (Runtime_Asm_File) then
-            Asm_Generation.Close_File;
-            Asm_Generation.Delete_File;
-         end if;
-         raise;
-   end;
-
-
-   Asm_Generation.Create_File (Asm_Filename);
-
-   Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
-
-
-   Ada.Directories.Set_Directory (Files_Dir);
-
-
-
    if Args.Parser.Parse then
+      Syntaxic_Analysis.Init;
+
+
+      -- Compiling runtime only if the code as been touch since the last compilation
+      Lexical_Analysis.Load(Runtime_Source_File, False);
+      Error_Log.Set_Filename  (Runtime_Source_File);
+      declare
+         T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+      begin
+         Semantic_Analysis.AST_Analyse (T);
+
+
+         Syntaxic_Analysis.Debug_Print_Tree (T);
+         Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
+         Lexical_Analysis.Close_Debug;
+
+
+         -- only run syntaxic and semantic analysis for setting loup and cond counter and the symbol table
+         if Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
+            Asm_Generation.Create_File(Filename => Runtime_Asm_File);
+            Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+            Asm_Generation.Close_File;
+            Ada.Text_IO.Put_Line ("runtime compilation is ok");
+         else
+            Ada.Text_IO.Put_Line ("runtime is not recompile");
+         end if;
+
+      exception
+         when e : others =>
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "rutime compilation failed");
+            Ada.Text_IO.Put_Line (Ada.Exceptions.Exception_Message(e));
+            if Ada.Directories.Exists (Runtime_Asm_File) then
+               Asm_Generation.Close_File;
+               Asm_Generation.Delete_File;
+            end if;
+            raise;
+      end;
+
+
+      Asm_Generation.Create_File (Asm_Filename);
+
+      Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
+
+
+      Ada.Directories.Set_Directory (Files_Dir);
+
+
+
+
       declare
          Is_Debug_Mode : constant Boolean := Args.debug.Get;
          Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
