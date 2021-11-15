@@ -51,10 +51,10 @@ for test_dir_name in os.listdir("."):
 
             s = ""
             try:
-                f = open("excepted.txt", 'r')
+                f = open("expected.txt", 'r')
                 s = f.read()
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to open excepted.txt...)")
+                print(print_test_name + RED + " [ko]" + ENDC + " (failed to open expected.txt...)")
                 p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
                 os.chdir("..")
                 continue;
@@ -73,10 +73,10 @@ for test_dir_name in os.listdir("."):
 
             s = ""
             try:
-                f = open("excepted.txt", 'r')
+                f = open("expected.txt", 'r')
                 s = f.read()
             except:
-                print(print_test_name + RED + " [ko]" + ENDC + " (failed to open excepted.txt...)")
+                print(print_test_name + RED + " [ko]" + ENDC + " (failed to open expected.txt...)")
                 p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
                 os.chdir("..")
                 continue;
