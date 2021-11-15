@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 import subprocess
 import os
 
@@ -7,7 +7,7 @@ ENDC = '\033[m'
 GREEN = '\033[32m'
 BLUE = '\033[34m'
 
-compiler = os.path.abspath("./bin/main")
+compiler = os.path.abspath("./bin/compiler")
 msm = os.path.abspath("../machine/msm/msm")
 
 os.chdir("./test")

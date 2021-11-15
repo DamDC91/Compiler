@@ -1,2 +1,2 @@
-../../../bin/main test.c
+../../../bin/compiler test.c
 ../../../../machine/msm/msm out.s < expected.txt
