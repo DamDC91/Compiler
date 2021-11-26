@@ -11,6 +11,7 @@ with Ada.Command_Line;
 with Ada.Text_IO;
 with Ada.Calendar;
 with Ada.Exceptions;
+
 procedure main is
 
    package Args is
@@ -48,7 +49,6 @@ begin
    if Args.Parser.Parse then
       Syntaxic_Analysis.Init;
 
-
       -- Compiling runtime only if the code as been touch since the last compilation
       Lexical_Analysis.Load(Runtime_Source_File, False);
       Error_Log.Set_Filename  (Runtime_Source_File);
@@ -84,52 +84,41 @@ begin
             raise;
       end;
 
-
       Asm_Generation.Create_File (Asm_Filename);
-
       Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
 
-
       Ada.Directories.Set_Directory (Files_Dir);
-
-
-
 
       declare
          Is_Debug_Mode : constant Boolean := Args.debug.Get;
          Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
 
       begin
-
          for i in Files_Array'First ..Files_Array'Last loop
 
             declare
                FileName : constant String := Ada.Strings.Unbounded.To_String (Files_Array (i));
             begin
+
+               if not Ada.Directories.Exists (FileName) then
+                  Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error the file " & FileName & " doesn't exist");
+                  raise Error_Log.Compilation_Error;
+               end if;
                Error_Log.Set_Filename  (FileName);
                Lexical_Analysis.Load(FileName, Is_Debug_Mode);
-
-
                declare
                   T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
                begin
                   Semantic_Analysis.AST_Analyse (T);
-
                   if Is_Debug_Mode then
                      Syntaxic_Analysis.Debug_Print_Tree (T);
                      Syntaxic_Analysis.Debug_Print_Tree_Graphviz (T);
                   end if;
-
                   Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
-
                end;
-
             end;
             Lexical_Analysis.Close_Debug;
-
          end loop;
-
-
       end;
 
       Asm_Generation.Add_Start (Start_Filename => Start_File);
@@ -137,6 +126,6 @@ begin
       Asm_Generation.Close_File;
    end if;
 
-
-
+exception
+   when Error_Log.Compilation_Error => null;
 end main;
