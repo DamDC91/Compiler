@@ -53,8 +53,8 @@ package body Lexical_Analysis is
             if Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF then
                Line := Line + 1;
             end if;
-         
-            Index:=Index+1;
+            
+            Index := Index + 1;
             if Index >= Ada.Strings.Unbounded.Length (File_Content) then
                return (Has_Value => False,
                           Token_Type => Token.Tok_EOF,
@@ -92,7 +92,7 @@ package body Lexical_Analysis is
          if Ada.Strings.Unbounded.Element (File_Content, Index) = '/' and ( (Index + 1 < Ada.Strings.Unbounded.Length (File_Content)) and then
                                                                           Ada.Strings.Unbounded.Element (File_Content, Index + 1) = '*') then
             Rem_Space := True;
-            Index := Index + 1;
+            Index := Index + 2;
             while not (Ada.Strings.Unbounded.Element(File_Content, Index) = '*' and ((Index + 1 < Ada.Strings.Unbounded.Length (File_Content)) and then
                                                                                     Ada.Strings.Unbounded.Element (File_Content, Index + 1) = '/')) loop
                if Ada.Strings.Unbounded.Element(File_Content, Index) = Ada.Characters.Latin_1.LF then
@@ -461,6 +461,11 @@ package body Lexical_Analysis is
       Index := 1;
       Line := 1;
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
+       -- null Token, usefull to set the Line to 1 if there is an error at the begging of the file
+      Current_Token := (Has_Value => False,
+                        Token_Type => Token.Tok_EOF,
+                        Line       => 1);
+      -- the logic use the next tocken
       Next_Token := Get_Token;
       Debug_Info := Debug;
       if Debug then
