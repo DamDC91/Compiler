@@ -141,6 +141,19 @@ package body Semantic_Analysis is
                          Line => N.Line);
                   raise;
             end;
+         
+         when Syntaxic_Analysis.Node_Address =>
+            declare
+               N : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C));
+               use type Syntaxic_Analysis.Node_Type_Enum_Type;
+            begin
+               if Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
+                  Error (Msg => "lvalue required for & operand",
+                         Line => N.Line); 
+                  raise Compilation_Error;
+               end if;
+            end;
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
                
          when others =>
             Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
