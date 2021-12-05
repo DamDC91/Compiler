@@ -11,5 +11,6 @@ project main is
    end Compiler;	
    package Builder is
       for Executable ("main.adb") use "compiler";
+       for Switches (others) use ("-j0");
    end Builder;
 end main;
