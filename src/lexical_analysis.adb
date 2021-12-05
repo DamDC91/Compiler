@@ -499,7 +499,7 @@ package body Lexical_Analysis is
    procedure Accept_Token(Token_Type : Token.Token_Type_Enum_Type) is
    begin
       if not Check_Token(Token_Type) then
-         Error(Token_Type'Image & " was excpected here, found " & Get_Current_Token.Token_Type'Image, Get_Current_Token.Line);
+         Error(Token_Type'Image & " was excpected here, found " & Get_Next_Token.Token_Type'Image, Get_Current_Token.Line);
          raise Error_Log.Compilation_Error;
       end if;
    end Accept_Token;
