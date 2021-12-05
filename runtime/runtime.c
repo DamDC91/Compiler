@@ -39,13 +39,19 @@ int scanf()
 {
     // TODO handle negavtive nb
     int c, res = 0;
+    int sign = 1;
     c = getchar();
+    if (c == 45)
+    {
+        sign = -1;
+        c = getchar();
+    }
     while(c != 10)
     {
         res = res*10 + (c - 48);
         c = getchar();
     }
-    return res;
+    return sign*res;
 }
 
 int abs(int nb)
