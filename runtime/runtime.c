@@ -37,7 +37,6 @@ int printf(int nb)
 
 int scanf()
 {
-    // TODO handle negavtive nb
     int c, res = 0;
     int sign = 1;
     c = getchar();

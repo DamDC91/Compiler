@@ -85,7 +85,7 @@ begin
                Asm_Generation.Create_File(Filename => Runtime_Asm_File);
                Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
                Asm_Generation.Close_File;
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "runtime compilation done");
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "runtime compilation succeed");
 
             elsif Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
                Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "runtime has been modified, should be compile");
