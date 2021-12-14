@@ -28,7 +28,7 @@ package body Semantic_Analysis is
       procedure AST_Analyse_Node (C : Syntaxic_Analysis.Tree.Cursor) is
          N : Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       
-      
+         Line : constant Positive := N.Line;
       begin
          case N.Node_Type is
          when Syntaxic_Analysis.Node_Var_Decl =>
@@ -42,12 +42,8 @@ package body Semantic_Analysis is
                                      Is_Init => False,
                                      Idx => Nb_Var,
                                      Is_Arg_Var => Is_Arg),
-                              Id => N.Var_Key);
-            exception
-               when e : Compilation_Error =>
-                  Error (MSg => Ada.Exceptions.Exception_Message(e),
-                         Line => N.Line);
-                  raise;
+                              Id => N.Var_Key,
+                              Line => Line);
             end;
             declare
                use type Ada.Containers.Count_Type;
@@ -59,7 +55,7 @@ package body Semantic_Analysis is
                
          when Syntaxic_Analysis.Node_Var_Ref =>
             declare
-               s : Symbol := Search_Ident (Id => N.Ref_Var_Key);
+               s : Symbol := Search_Ident (Id => N.Ref_Var_Key, Line => Line);
             begin
                if S.Symbol_Type /= Symbol_Var then
                   Error (Msg  => "missing parenthesis in call statement",
@@ -103,7 +99,8 @@ package body Semantic_Analysis is
                                         Decl_Line => N.Line,
                                         Is_Referenced => False,
                                         Nb_Args => Nb_Args),
-                                 Id => N.Name_Key);
+                                 Id => N.Name_Key,
+                                 Line => Line);
                exception
                   when e : Compilation_Error =>
                      Error (MSg => Ada.Exceptions.Exception_Message(e),
@@ -123,23 +120,22 @@ package body Semantic_Analysis is
             
          when Syntaxic_Analysis.Node_Call =>
             declare
-               S : Symbol := Search_Ident (Id => N.Ref_Func_Key);
+               S : Symbol := Search_Ident (Id => N.Ref_Func_Key, Line => Line);
             begin
                if S.Symbol_Type = Symbol_Var then
-                  raise Compilation_Error with "Invalid call statment, function not declared";
-               elsif S.Nb_Args /= Integer (Syntaxic_Analysis.Tree.Child_Count (C)) then
-                  raise Compilation_Error with "Invalid number of argument";
+                  Error_Log.Error (Msg  => "'" & Lexical_Analysis.Get_Str_From_Assoc_Table (N.Ref_Func_Key) & "' undeclared",
+                                   Line => Line);
+                  raise Compilation_Error;
+               elsif S.Nb_Args /= Integer (Syntaxic_Analysis.Tree.Child_Count (C)) then -- wrong number of argument
+                  Error_Log.Error (Msg  => "'" & Lexical_Analysis.Get_Str_From_Assoc_Table (N.Ref_Func_Key) & "' undeclared",
+                                   Line => Line);
+                  raise Compilation_Error;
                end if;
                S.Is_Referenced := True;
                Update_Element (Id => N.Ref_Func_Key,
                                El => S);
                
                Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
-            exception
-               when e : Compilation_Error =>
-                  Error (MSg => Ada.Exceptions.Exception_Message(e),
-                         Line => N.Line);
-                  raise;
             end;
          
          when Syntaxic_Analysis.Node_Address =>
@@ -147,10 +143,11 @@ package body Semantic_Analysis is
                N : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C));
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
-               if Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Var_Ref then
+               if Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Var_Ref and 
+               Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Dereference then
                   Error (Msg => "lvalue required for & operand",
                          Line => N.Line); 
-                  raise Compilation_Error;
+                  raise Error_Log.Compilation_Error;
                end if;
             end;
             Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
@@ -162,7 +159,7 @@ package body Semantic_Analysis is
       
    begin
       declare
-         M : MAp.Map;
+         M : Map.Map;
       begin
          M.Insert (Key      => 1,
                    New_Item => (Symbol_Type => Symbol_Func,
@@ -206,7 +203,7 @@ package body Semantic_Analysis is
    end Update_Element;
 
    -- declare a variable
-   procedure Declare_Ident (Var : Symbol; Id : Natural) is
+   procedure Declare_Ident (Var : Symbol; Id : Natural; Line : Positive) is
       M : Map.Map;
    begin
       if Var_Vec.Is_Empty then
@@ -214,7 +211,9 @@ package body Semantic_Analysis is
       end if;
       M := Var_Vec.Last_Element;
       if M.Contains(Id) then
-         raise Compilation_Error with "2 declarations of with the same name, conflict : " & Lexical_Analysis.Get_Str_From_Assoc_Table (Id);
+         Error_Log.Error (Msg  => "redifinition of " & Lexical_Analysis.Get_Str_From_Assoc_Table (Id),
+                          Line => Line);
+         raise Compilation_Error;
       else
          M.Insert (New_Item => Var,
                    Key => Id);
@@ -224,12 +223,12 @@ package body Semantic_Analysis is
    end Declare_Ident;
    
    -- search a Id and return its Symbol
-   function Search_Ident (Id : Natural) return Symbol is
+   function Search_Ident (Id : Natural; Line : Positive) return Symbol is
       M : Map.Map;
       Last_Idx : Integer;
    begin
       if Vec.Is_Empty (Var_Vec) then
-         raise Compilation_Error with "Search in a empty stack";
+         raise Program_Error with "Search in a empty stack";
       end if;
       
       Last_Idx := Vec.Last_Index (Var_Vec);
@@ -241,7 +240,9 @@ package body Semantic_Analysis is
          end if;
          Last_Idx := Last_Idx - 1; 
       end loop;
-      raise Compilation_Error with "this Id is not declare " & Lexical_Analysis.Get_Str_From_Assoc_Table (Id);
+      Error_Log.Error (Msg  => "'" & Lexical_Analysis.Get_Str_From_Assoc_Table (Id) & "' undeclared",
+                       Line => Line);
+      raise Compilation_Error;
    end Search_Ident;
    
    procedure Add_Scope is 
@@ -261,7 +262,7 @@ package body Semantic_Analysis is
                      Line => S.Decl_Line);
          end if;
          if not S.Is_Init and S.Is_Arg_Var then
-            Warning (Lexical_Analysis.Get_Str_From_Assoc_Table (id) & " is not initialise", -- could be false if it is initialise using a pointer
+            Warning (Lexical_Analysis.Get_Str_From_Assoc_Table (id) & " is not initialize", -- could be false if it is initialise using a pointer
                      Line => S.Decl_Line);
          end if;
         

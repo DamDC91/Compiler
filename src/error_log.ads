@@ -7,4 +7,11 @@ package Error_Log is
    procedure Warning (Msg : String; Line : Natural);
 
    procedure Set_Filename(str : string);
+
+   procedure Set_Warning_On (W : Boolean);
+
+   procedure Set_Debug_On (B : Boolean);
+
+   function Get_Debug_On return Boolean;
+
 end Error_Log;

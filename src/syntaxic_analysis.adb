@@ -4,6 +4,7 @@ with Ada.Strings.Fixed;
 with Tree_Graphviz;
 with Error_Log;
 use Error_Log;
+with Ada.Directories;
 package body Syntaxic_Analysis is
 
    Op_Table : array (Operation_Token) of Operation_Record_Type;
@@ -89,7 +90,20 @@ package body Syntaxic_Analysis is
                               Source   => Tmp,
                               Position => Pos);
       end loop;
+      if Error_Log.Get_Debug_On then
+         Debug_Print_Tree (N);
+         Debug_Print_Tree_Graphviz (N);
+      end if;
       return N;
+   exception
+      when others =>
+         -- TODO check for no bug
+         if Error_Log.Get_Debug_On then
+            Debug_Print_Tree (N);
+            Debug_Print_Tree_Graphviz (N);
+            Lexical_Analysis.Close_Debug;
+         end if;
+         raise;
    end G;
 
    function E (Min_Priority : Priority := Priority (0)) return Tree.Tree is
@@ -1000,10 +1014,16 @@ package body Syntaxic_Analysis is
          Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
       end Print_Tree;
 
+      FileName : constant String := "tree.txt";
+      use type Ada.Directories.File_Kind;
    begin
+      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+         raise Error_Log.Compilation_Error;
+      end if;
       Ada.Text_IO.Create (File => Debug_File_Tree,
                           Mode => Ada.Text_IO.Out_File,
-                          Name => "tree.txt");
+                          Name => FileName);
       Tree.Iterate (T, Print_Tree'Access);
       Ada.Text_IO.Close (Debug_File_Tree);
    end Debug_Print_Tree;
@@ -1038,10 +1058,16 @@ package body Syntaxic_Analysis is
                                              Get_Arrow_Label => Get_arrow);
       use Ada.Text_IO;
       F : File_Type;
+      FileName : constant String := "tree.gv";
+      use type Ada.Directories.File_Kind;
    begin
+      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+         raise Error_Log.Compilation_Error;
+      end if;
       Create (File => F,
               Mode => Out_File,
-              Name => "tree.gv");
+              Name => FileName);
       Put_Line (F, "diGraph Tree {");
       For C in T.Iterate loop
          Graphviz.Put (F, C);

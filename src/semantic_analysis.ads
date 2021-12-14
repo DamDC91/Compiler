@@ -19,10 +19,10 @@ package Semantic_Analysis is
    end record;
    
    -- declare a variable and return its index
-   procedure Declare_Ident (Var : Symbol; Id : Natural);
+   procedure Declare_Ident (Var : Symbol; Id : Natural; Line : Positive);
    
    -- search a variable and return its index
-   function Search_Ident (Id : Natural) return Symbol;
+   function Search_Ident (Id : Natural; Line : Positive) return Symbol;
    
    procedure Update_Element (Id : Natural; El : Symbol);
    

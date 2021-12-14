@@ -5,6 +5,7 @@ with Ada.Characters.Latin_1;
 with Ada.Text_IO;
 with Error_Log; 
 use Error_Log;
+with Ada.Directories;
 package body Lexical_Analysis is
 
    File_Content : Ada.Strings.Unbounded.Unbounded_String;
@@ -23,7 +24,6 @@ package body Lexical_Analysis is
   
    Association_Table_Vector : Vector_Association_Table.Vector;
    
-   Debug_Info : Boolean;
    File_Info : Ada.Text_IO.File_Type;
    
    
@@ -448,7 +448,9 @@ package body Lexical_Analysis is
    end Get_Token;
 
 
-   procedure Load(FileName : String; Debug : Boolean) is
+   procedure Load(FileName : String) is
+      Debug_FileName : constant String := "tokens.txt";
+      use type Ada.Directories.File_Kind;
    begin
       if Index = 1 then
          Association_Table_Vector.Append ("putchar");
@@ -467,18 +469,22 @@ package body Lexical_Analysis is
                         Line       => 1);
       -- the logic use the next tocken
       Next_Token := Get_Token;
-      Debug_Info := Debug;
-      if Debug then
+
+      if Error_Log.Get_Debug_On then
+         if Ada.Directories.Exists (Debug_FileName) and then Ada.Directories.Kind (Debug_FileName) /= Ada.Directories.Ordinary_File then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & Debug_FileName & "' cannot be created");
+            raise Error_Log.Compilation_Error;
+         end if;
          Ada.Text_IO.Create(File => File_Info,
                             Mode => Ada.Text_IO.Out_File,
-                            Name => "tokens.txt");
+                            Name => Debug_FileName);
       end if;
    end Load;
 
 
    procedure Advance_Token is
    begin
-      if Debug_Info then
+      if Error_Log.Get_Debug_On then
          Ada.Text_IO.Put_Line (File_Info, Token.Debug_Print (Next_Token));
       end if;
       Current_Token := Next_Token;
@@ -522,7 +528,7 @@ package body Lexical_Analysis is
    
    procedure Close_Debug is 
    begin
-      if Debug_Info then
+      if Error_Log.Get_Debug_On and Ada.Text_IO.Is_Open (File_Info) then
          Ada.Text_IO.Close (File_Info);
       end if;
    end Close_Debug;

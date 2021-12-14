@@ -2,7 +2,7 @@ with Token;
 with Ada.Containers.Indefinite_Vectors;
 package Lexical_Analysis is
 
-   procedure Load(FileName : String; Debug : Boolean);
+   procedure Load(FileName : String);
 
    procedure Advance_Token;
 

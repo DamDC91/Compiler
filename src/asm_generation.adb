@@ -6,13 +6,19 @@ with Error_Log;
 use Error_Log;
 with Lexical_Analysis;
 with Text_Utils;
+with Ada.Directories;
 package body Asm_Generation is
    
    File : File_Type;
    Tab : constant string := "    ";
    
    procedure Create_File (FileName : String) is
+      use type Ada.Directories.File_Kind;
    begin      
+      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+         raise Error_Log.Compilation_Error;
+      end if;
       Create (File => File,
               Mode => Ada.Text_IO.Out_File,
               Name => FileName);
@@ -27,7 +33,9 @@ package body Asm_Generation is
    
    procedure Close_File is
    begin
-      Close (File);
+      if Ada.Text_IO.Is_Open (File) then
+         Close (File);
+      end if;
    end Close_File;
    
    procedure Delete_File is
@@ -97,16 +105,24 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Node_Address =>
             declare
-               Child : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
-               Index : constant Natural := (Child.Var_Stack_Index + 1);
+               use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
-               Put_Line (File, Tab & "prep start2");
-               Put_Line (File, Tab & "add");
-               Put_Line (File, Tab & "prep start2");
-               Put_Line (File, Tab & "drop");
-               Put_Line (File, Tab & "sub");
-               Put_Line (File, Tab & "push " & Index'Image);
-               Put_Line (File, Tab & "sub");
+               if Syntaxic_Analysis.Tree.First_Child_Element (C).Node_Type = Syntaxic_Analysis.Node_Dereference then
+                  Generate_Asm(C => Syntaxic_Analysis.Tree.First_Child (Syntaxic_Analysis.Tree.First_Child (C)));
+               else
+                  declare
+                     Child : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
+                     Index : constant Natural := (Child.Var_Stack_Index + 1);
+                  begin
+                     Put_Line (File, Tab & "prep start2");
+                     Put_Line (File, Tab & "add");
+                     Put_Line (File, Tab & "prep start2");
+                     Put_Line (File, Tab & "drop");
+                     Put_Line (File, Tab & "sub");
+                     Put_Line (File, Tab & "push " & Index'Image);
+                     Put_Line (File, Tab & "sub");
+                  end;
+               end if;
             end;
          when Syntaxic_Analysis.Node_Dereference =>
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child (C));
