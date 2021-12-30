@@ -29,6 +29,7 @@ package body Semantic_Analysis is
          N : Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       
          Line : constant Positive := N.Line;
+         use type Syntaxic_Analysis.Node_Type_Enum_Type;
       begin
          case N.Node_Type is
          when Syntaxic_Analysis.Node_Var_Decl =>
@@ -140,8 +141,7 @@ package body Semantic_Analysis is
          
          when Syntaxic_Analysis.Node_Address =>
             declare
-               N : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C));
-               use type Syntaxic_Analysis.Node_Type_Enum_Type;
+               N : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
             begin
                if Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Var_Ref and 
                Syntaxic_Analysis.Tree.Element (Syntaxic_Analysis.Tree.First_Child (C)).Node_Type /= Syntaxic_Analysis.Node_Dereference then
@@ -152,6 +152,18 @@ package body Semantic_Analysis is
             end;
             Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
                
+         when Syntaxic_Analysis.Node_Op_Assignment =>
+            declare
+               Left : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
+            begin
+               if Left.Node_Type /= Syntaxic_Analysis.Node_Var_Ref and Left.Node_Type /= Syntaxic_Analysis.Node_Dereference then
+                  Error_Log.Error (Msg  => "lvalue required as left operand of assignment",
+                                   Line => N.Line);
+                  raise Error_Log.Compilation_Error;
+               end if;
+            end;
+            Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
+            
          when others =>
             Syntaxic_Analysis.Tree.Iterate_Children (Parent => C, Process => AST_Analyse_Node'Access);
          end case;

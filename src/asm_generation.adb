@@ -7,6 +7,7 @@ use Error_Log;
 with Lexical_Analysis;
 with Text_Utils;
 with Ada.Directories;
+with Ada.Assertions;
 package body Asm_Generation is
    
    File : File_Type;
@@ -157,12 +158,6 @@ package body Asm_Generation is
             Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
             
-         -- when Syntaxic_Analysis.Node_Debug =>
-         --   if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-         --      raise Constraint_Error with "AST invalid";
-         --   end if;
-         --   Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
-         --   Put_Line (File, Tab & "dbg");
          when Syntaxic_Analysis.Node_Null =>
             raise Constraint_Error with "AST invalid";
             
@@ -180,9 +175,8 @@ package body Asm_Generation is
                First_Child_Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (First_Child);
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
-               if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref and First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Dereference then
-                  raise Constraint_Error with "Left operand is not a variable";
-               end if;
+               Ada.Assertions.Assert (First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref or First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Dereference, 
+                                      "AST invalid");
                if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
                   Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
