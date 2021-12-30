@@ -62,7 +62,7 @@ for test_dir_name in os.listdir("."):
 
         else:
             try:
-                p = Try_Run(print_test_name, compiler + " -g test.c", "(failed to run the compiler...)")
+                p = Try_Run(print_test_name, compiler + " test.c", "(failed to run the compiler...)")
             except:
                 continue;
 
