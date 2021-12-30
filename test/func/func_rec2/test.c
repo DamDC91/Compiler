@@ -7,5 +7,5 @@ int fibo(int a)
 }
 int main()
 {
-    debug fibo(34);
+    printf(fibo(34));
 }

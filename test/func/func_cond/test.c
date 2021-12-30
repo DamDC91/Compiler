@@ -1,8 +1,3 @@
-/*int printf(int a)
-{
-    debug a;
-}*/
-
 int check(int a, int b)
 {
     return a < b;

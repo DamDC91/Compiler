@@ -17,5 +17,5 @@ int main() {
         } while(k<2);
         j = j + 1;
     } while(j<3);
-    debug res;
+    printf(res);
 }

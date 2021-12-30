@@ -11,5 +11,5 @@ int main() {
     for(h = 0; h < 4; h = h + 1)
     for(i = 0; i < 4; i = i + 1)
         res = res + 1;
-    debug res;
+    printf(res);
 }

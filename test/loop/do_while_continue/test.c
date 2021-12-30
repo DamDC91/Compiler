@@ -8,5 +8,5 @@ int main() {
             continue;
         res = res + 1;
     } while(i<100);
-    debug res;
+    printf(res);
 }

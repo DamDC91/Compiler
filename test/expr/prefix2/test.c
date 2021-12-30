@@ -1,3 +1,3 @@
 int main() {
-    debug 2 * !-+!100;
+    printf(2 * !-+!100);
 }

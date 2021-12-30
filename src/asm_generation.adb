@@ -40,7 +40,9 @@ package body Asm_Generation is
    
    procedure Delete_File is
    begin
-      Delete (File);
+      if Ada.Text_IO.Is_Open (File) then
+         Delete (File);
+      end if;
    end Delete_File;
    
    procedure Add_Start (Start_Filename : String) is
@@ -139,14 +141,14 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Operation_Node_Enum_Type =>
             if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
-               raise Compilation_Error with "AST invalid";
+               raise Constraint_Error with "AST invalid";
             end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
             Put_Line (File, Tab &  Get_Asm_Instruction (Node.Node_Type));      
          when Syntaxic_Analysis.Node_Drop =>
             if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-               raise Compilation_Error with "AST invalid";
+               raise Constraint_Error with "AST invalid";
             end if;
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line(File, Tab & "drop");
@@ -155,12 +157,14 @@ package body Asm_Generation is
             Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
             
-         when Syntaxic_Analysis.Node_Debug =>
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-               raise Compilation_Error with "AST invalid";
-            end if;
-            Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
-            Put_Line (File, Tab & "dbg");
+         -- when Syntaxic_Analysis.Node_Debug =>
+         --   if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
+         --      raise Constraint_Error with "AST invalid";
+         --   end if;
+         --   Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
+         --   Put_Line (File, Tab & "dbg");
+         when Syntaxic_Analysis.Node_Null =>
+            raise Constraint_Error with "AST invalid";
             
          when Syntaxic_Analysis.Node_Var_Decl => 
             if Syntaxic_Analysis.Tree.Child_Count (C) = 1 then
@@ -177,7 +181,7 @@ package body Asm_Generation is
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
                if First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Var_Ref and First_Child_Node.Node_Type /= Syntaxic_Analysis.Node_Dereference then
-                  raise Compilation_Error with "Left operand is not a variable";
+                  raise Constraint_Error with "Left operand is not a variable";
                end if;
                if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
                   Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
@@ -187,7 +191,6 @@ package body Asm_Generation is
                   Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
                   Generate_Asm (C => First_Child);
-                  --Put_Line (File, Tab & "write");
                end if;
             end;
             
@@ -197,7 +200,7 @@ package body Asm_Generation is
                                                      Process => Call_Generate_Asm'Access);
          when Syntaxic_Analysis.Node_Cond => 
             if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 and Syntaxic_Analysis.Tree.Child_Count (C) /= 3 then
-               raise Compilation_Error with "AST invalid";
+               raise Constraint_Error with "AST invalid";
             end if;
             declare
                Cond_Nb : constant Positive := Syntaxic_Analysis.Tree.Element(C).Cond_Count;
@@ -244,7 +247,7 @@ package body Asm_Generation is
                   Put_Line (File, Tab & "jump start_loop_" & Image (Current_Loop_Nb));
                   Put_Line (File, ".end_loop_" & Image (Current_Loop_Nb));               
                else
-                  Raise Compilation_Error with "AST Invalid";
+                  Raise Constraint_Error with "AST Invalid";
                end if;
             end;
          when Syntaxic_Analysis.Node_Call =>

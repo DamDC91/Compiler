@@ -17,5 +17,5 @@ int main() {
         }
         j = j + 1;
     }
-    debug res;
+    printf(res);
 }

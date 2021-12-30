@@ -9,5 +9,5 @@ int main() {
         if (i == 12)
             break;
     } while(i < 100);
-    debug res;
+    printf(res);
 }

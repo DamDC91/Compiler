@@ -1,10 +1,6 @@
 with Lexical_Analysis;
-with Ada.Text_IO;
-with Ada.Strings.Fixed;
-with Tree_Graphviz;
 with Error_Log;
 use Error_Log;
-with Ada.Directories;
 package body Syntaxic_Analysis is
 
    Op_Table : array (Operation_Token) of Operation_Record_Type;
@@ -19,56 +15,8 @@ package body Syntaxic_Analysis is
    end Set_Discriminant;
 
    procedure Init is
-      use Token;
    begin
-      Op_Table (Tok_Assignment) := (Left_Priority => 1,
-                                    Right_Priority => 1,
-                                    Node => Node_Op_Assignment);
-
-      Op_Table (Tok_Or_Boolean) := (Left_Priority => 2,
-                                    Right_Priority => 3,
-                                    Node => Node_Op_Or_Boolean);
-
-      Op_Table (Tok_And_Boolean) := (Left_Priority => 3,
-                                     Right_Priority => 4,
-                                     Node => Node_Op_And_Boolean);
-
-      Op_Table (Tok_Equal_Comparaison) := (Left_Priority => 4,
-                                           Right_Priority => 5,
-                                           Node => Node_Op_Equal_Comparaison);
-      Op_Table (Tok_Difference_Comparaison) := (Left_Priority => 4,
-                                                Right_Priority => 5,
-                                                Node => Node_Op_Difference_Comparaison);
-
-      Op_Table (Tok_Greater_than) := (Left_Priority => 5,
-                                      Right_Priority => 6,
-                                      Node => Node_Op_Greater_than);
-      Op_Table (Tok_Greater_Or_Equal_Than) := (Left_Priority => 5,
-                                               Right_Priority => 6,
-                                               Node => Node_Op_Greater_Or_Equal_Than);
-      Op_Table (Tok_Less_Than) := (Left_Priority => 5,
-                                   Right_Priority => 6,
-                                   Node => Node_Op_Less_Than);
-      Op_Table (Tok_Less_Or_Equal_Than) := (Left_Priority => 5,
-                                            Right_Priority => 6,
-                                            Node => Node_Op_Less_Or_Equal_Than);
-
-      Op_Table (Tok_Plus) := (Left_Priority => 6,
-                              Right_Priority => 7,
-                              Node => Node_Op_Add);
-      Op_Table (Tok_Minus) := (Left_Priority => 6,
-                               Right_Priority => 7,
-                               Node => Node_Op_Sub);
-
-      Op_Table (Tok_Asterisk) := (Left_Priority => 7,
-                                  Right_Priority => 8,
-                                  Node => Node_Op_Mult);
-      Op_Table (Tok_Slash) := (Left_Priority => 7,
-                               Right_Priority => 8,
-                               Node => Node_Op_Division);
-      Op_Table (Tok_Percent) := (Left_Priority => 7,
-                                 Right_Priority => 8,
-                                 Node => Node_Op_Modulo);
+      null;
    end Init;
 
    function G return Tree.Tree is
@@ -93,11 +41,11 @@ package body Syntaxic_Analysis is
       if Error_Log.Get_Debug_On then
          Debug_Print_Tree (N);
          Debug_Print_Tree_Graphviz (N);
+         Lexical_Analysis.Close_Debug;
       end if;
       return N;
    exception
       when others =>
-         -- TODO check for no bug
          if Error_Log.Get_Debug_On then
             Debug_Print_Tree (N);
             Debug_Print_Tree_Graphviz (N);
@@ -407,28 +355,6 @@ package body Syntaxic_Analysis is
             end loop;
             return T;
          end;
-      elsif Lexical_Analysis.Check_Token (Token_Type => Token.Tok_Debug) then
-         declare
-            T : Tree.Tree := E;
-            Pos : Tree.Cursor;
-            NT : Tree.Tree;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
-         begin
-            NT.Insert_Child (Parent   => NT.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Debug,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
-
-            Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
-
-            Tree.Splice_Subtree (Target   => NT,
-                                 Parent   => Pos,
-                                 Before   => Tree.No_Element,
-                                 Source   => T,
-                                 Position => unused);
-            return NT;
-         end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Int) then
          declare
             N : Tree.Tree;
@@ -486,12 +412,12 @@ package body Syntaxic_Analysis is
                   Id : constant Token.Token_Record_Type := Lexical_Analysis.Get_Current_Token;
                   Pos2 : Tree.Cursor;
                begin
-               N.Insert_Child (Parent   => Pos,
-                               Before   => Tree.No_Element,
-                               New_Item => (Node_Type => Node_Var_Decl,
-                                            Line => Lexical_Analysis.Get_Current_Token.Line,
-                                            Var_Key => Lexical_Analysis.Get_Current_Token.Value),
-                              Position => Pos2);
+                  N.Insert_Child (Parent   => Pos,
+                                  Before   => Tree.No_Element,
+                                  New_Item => (Node_Type => Node_Var_Decl,
+                                               Line => Lexical_Analysis.Get_Current_Token.Line,
+                                               Var_Key => Lexical_Analysis.Get_Current_Token.Value),
+                                  Position => Pos2);
 
                   if Lexical_Analysis.Check_Token (Token.Tok_Assignment) then
                      declare
@@ -927,6 +853,7 @@ package body Syntaxic_Analysis is
          Pos : Tree.Cursor;
          Pos_Sub : Tree.Cursor;
          I1 : Tree.Tree;
+         First_Loop : Boolean := True;
       begin
          N.Insert_Child (Parent   => N.Root,
                          Before   => Tree.No_Element,
@@ -944,6 +871,15 @@ package body Syntaxic_Analysis is
          Pos := Pos_Sub;
          Lexical_Analysis.Accept_Token (Token.Tok_Left_Parenthesis);
          while not Lexical_Analysis.Check_Token (Token.Tok_Right_Parenthesis) loop
+            if First_Loop then
+               First_Loop := False;
+            else
+               if (not Lexical_Analysis.Check_Token (Token.Tok_Comma)) then
+                  Error_Log.Error (Msg  => "comma is missing",
+                                   Line => Lexical_Analysis.Get_Current_Token.Line);
+                  raise Error_Log.Compilation_Error;
+               end if;
+            end if;
             Lexical_Analysis.Accept_Token (Token.Tok_Int);
             Lexical_Analysis.Accept_Token (Token.Tok_Id);
             N.Insert_Child (Parent   => Pos,
@@ -951,11 +887,6 @@ package body Syntaxic_Analysis is
                             New_Item => (Node_Type => Node_Var_Decl,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
                                          Var_Key => Lexical_Analysis.Get_Current_Token.Value));
-            declare
-               unused : constant Boolean := Lexical_Analysis.Check_Token (Token.Tok_Comma);
-            begin
-               null;
-            end;
          end loop;
 
          I1 := I;
@@ -987,95 +918,57 @@ package body Syntaxic_Analysis is
       return ok;
    end Same_Node;
 
-   function Debug_Print (N : Node_Variant_Type) return string is
-   begin
-      case N.Node_Type is
-         when Node_Constant =>
-            return "(" & N.Node_Type'Image & ", Val:" & N.Value'Image & ", l:" & N.Line'Image & ")";
-         when Node_Var_Decl =>
-            return "(" & N.Node_Type'Image & ", Var_Key:" & N.Var_Key'Image & ", l:" & N.Line'Image & ")";
-         when Node_Var_Ref =>
-            return "(" & N.Node_Type'Image & ", Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & " l:" & N.Line'Image & ")";
-         when others =>
-            return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
-      end case;
-   end Debug_Print;
 
-   procedure Debug_Print_Tree (T : Tree.Tree) is
-      Debug_File_Tree : Ada.Text_IO.File_Type;
+begin
+   -- Op table initialisation
+   Op_Table (Token.Tok_Assignment) := (Left_Priority => 1,
+                                 Right_Priority => 1,
+                                 Node => Node_Op_Assignment);
 
-      procedure Print_Tree (C : Tree.Cursor) is
-         use Ada.Strings.Fixed;
-         N : constant Node_Variant_Type := Tree.Element (C);
-         P : constant Natural := Natural (Tree.Depth (C))-2;
-         str : constant string := P * "----";
-      begin
-         Ada.Text_IO.Put (Debug_File_Tree, str);
-         Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
-      end Print_Tree;
+   Op_Table (Token.Tok_Or_Boolean) := (Left_Priority => 2,
+                                 Right_Priority => 3,
+                                 Node => Node_Op_Or_Boolean);
 
-      FileName : constant String := "tree.txt";
-      use type Ada.Directories.File_Kind;
-   begin
-      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
-         raise Error_Log.Compilation_Error;
-      end if;
-      Ada.Text_IO.Create (File => Debug_File_Tree,
-                          Mode => Ada.Text_IO.Out_File,
-                          Name => FileName);
-      Tree.Iterate (T, Print_Tree'Access);
-      Ada.Text_IO.Close (Debug_File_Tree);
-   end Debug_Print_Tree;
+   Op_Table (Token.Tok_And_Boolean) := (Left_Priority => 3,
+                                  Right_Priority => 4,
+                                  Node => Node_Op_And_Boolean);
 
+   Op_Table (Token.Tok_Equal_Comparaison) := (Left_Priority => 4,
+                                        Right_Priority => 5,
+                                        Node => Node_Op_Equal_Comparaison);
+   Op_Table (Token.Tok_Difference_Comparaison) := (Left_Priority => 4,
+                                             Right_Priority => 5,
+                                             Node => Node_Op_Difference_Comparaison);
 
-   procedure Debug_Print_Tree_Graphviz (T : Tree.Tree) is
-      function Get_label (C : Tree.Cursor) return string is
-         N : constant Node_Variant_Type := Tree.Element (C);
-         Img : constant String := N.Node_Type'Image;
-         Index : constant Integer := Ada.Strings.Fixed.Index (Img, "_");
-         Node_Img : constant String := Img (Index + 1..Img'Last);
-      begin
-         case N.Node_Type is
-         when Node_Constant =>
-            return Node_Img & "(Val:" & N.Value'Image &")";
-         when Node_Var_Decl =>
-            return Node_Img & "(Var_Key:" & N.Var_Key'Image & ")";
-         when Node_Var_Ref =>
-            return Node_Img & "(Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & ")";
-         when others =>
-            return Node_Img;
-         end case;
-      end Get_label;
-      function Get_arrow (C : Tree.Cursor) return string is
-         pragma Unreferenced(C);
-      begin
-         return "";
-      end Get_arrow;
-      package Graphviz is new Tree_Graphviz (Cursor          => Tree.Cursor,
-                                             Depth           => Tree.Depth,
-                                             Get_Node_Label  => Get_label,
-                                             Get_Arrow_Label => Get_arrow);
-      use Ada.Text_IO;
-      F : File_Type;
-      FileName : constant String := "tree.gv";
-      use type Ada.Directories.File_Kind;
-   begin
-      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
-         raise Error_Log.Compilation_Error;
-      end if;
-      Create (File => F,
-              Mode => Out_File,
-              Name => FileName);
-      Put_Line (F, "diGraph Tree {");
-      For C in T.Iterate loop
-         Graphviz.Put (F, C);
-      end loop;
-      Put_Line (F, "}");
-      close (F);
-   end Debug_Print_Tree_Graphviz;
+   Op_Table (Token.Tok_Greater_than) := (Left_Priority => 5,
+                                   Right_Priority => 6,
+                                   Node => Node_Op_Greater_than);
+   Op_Table (Token.Tok_Greater_Or_Equal_Than) := (Left_Priority => 5,
+                                            Right_Priority => 6,
+                                            Node => Node_Op_Greater_Or_Equal_Than);
+   Op_Table (Token.Tok_Less_Than) := (Left_Priority => 5,
+                                Right_Priority => 6,
+                                Node => Node_Op_Less_Than);
+   Op_Table (Token.Tok_Less_Or_Equal_Than) := (Left_Priority => 5,
+                                         Right_Priority => 6,
+                                         Node => Node_Op_Less_Or_Equal_Than);
 
+   Op_Table (Token.Tok_Plus) := (Left_Priority => 6,
+                           Right_Priority => 7,
+                           Node => Node_Op_Add);
+   Op_Table (Token.Tok_Minus) := (Left_Priority => 6,
+                            Right_Priority => 7,
+                            Node => Node_Op_Sub);
+
+   Op_Table (Token.Tok_Asterisk) := (Left_Priority => 7,
+                               Right_Priority => 8,
+                               Node => Node_Op_Mult);
+   Op_Table (Token.Tok_Slash) := (Left_Priority => 7,
+                            Right_Priority => 8,
+                            Node => Node_Op_Division);
+   Op_Table (Token.Tok_Percent) := (Left_Priority => 7,
+                              Right_Priority => 8,
+                              Node => Node_Op_Modulo);
 
 end Syntaxic_Analysis;
 

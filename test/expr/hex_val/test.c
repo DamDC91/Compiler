@@ -1,4 +1,4 @@
 int main() {
-    debug 0xfa3e;
-    debug (0x3a3e * 5) + 3;
+    printf(0xfa3e);
+    printf((0x3a3e * 5) + 3);
 }

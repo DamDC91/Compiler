@@ -5,5 +5,5 @@ int main() {
     {
         i = i + 1;
     } while(i<10);
-    debug i;
+    printf(i);
 }

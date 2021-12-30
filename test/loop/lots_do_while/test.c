@@ -41,5 +41,5 @@ int main() {
             } while(c<4);
         } while(b<4);
     } while(a<4);
-    debug res;
+    printf(res);
 }

@@ -10,5 +10,5 @@ int main() {
                 break;
         }
     }
-    debug res;
+    printf(res);
 }

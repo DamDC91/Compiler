@@ -3,6 +3,6 @@ int main() { // blalbla
     int a;// FZAZZRA
     a =4;
     // DFQDFSQ
-    debug a;//CDSDs
+    printf(a);//CDSDs
 }
 //DSDSD

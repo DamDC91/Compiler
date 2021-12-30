@@ -13,5 +13,5 @@ int main() {
     {
         res = res + b;
     }
-    debug res;
+    printf(res);
 }

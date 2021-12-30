@@ -1,15 +1,15 @@
 int main() {
     if (1 > 1) 
     {
-        debug 3;
+        printf(3);
     }
     else if (0 <= 0)
     {
-        debug 4;
-        debug 4+1;
+        printf(4);
+        printf(4+1);
     }
     else
     {
-        debug 7;
+        printf(7);
     }
 }

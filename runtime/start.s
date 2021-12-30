@@ -13,3 +13,6 @@
 .getchar
     recv
     ret
+
+.exit
+    halt

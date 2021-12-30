@@ -15,5 +15,5 @@ int main() {
         } while (j < 30);
 
     } while(i < 4);
-    debug res;
+    printf(res);
 }

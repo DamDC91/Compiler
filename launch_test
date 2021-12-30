@@ -19,7 +19,7 @@ def Try_Run(test_name, command, err):
         return p
     except Exception:
         print(test_name + RED + " [ko]" + ENDC + err)
-        p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+        p = subprocess.check_output('rm -f out.s tokens* tree*', stderr = subprocess.STDOUT, shell = True)
         os.chdir("..")
         raise
 
@@ -55,14 +55,14 @@ for test_dir_name in os.listdir("."):
                 s = f.read()
             except:
                 print(print_test_name + RED + " [ko]" + ENDC + " (failed to open expected.txt...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+                p = subprocess.check_output('rm -f out.s tokens* tree*', stderr = subprocess.STDOUT, shell = True)
                 os.chdir("..")
                 continue;
             test_ok = (s == p)
 
         else:
             try:
-                p = Try_Run(print_test_name, compiler + " -d test.c", "(failed to run the compiler...)")
+                p = Try_Run(print_test_name, compiler + " -g test.c", "(failed to run the compiler...)")
             except:
                 continue;
 
@@ -77,7 +77,7 @@ for test_dir_name in os.listdir("."):
                 s = f.read()
             except:
                 print(print_test_name + RED + " [ko]" + ENDC + " (failed to open expected.txt...)")
-                p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+                p = subprocess.check_output('rm -f out.s tokens* tree*', stderr = subprocess.STDOUT, shell = True)
                 os.chdir("..")
                 continue;
             test_ok = (s == p)
@@ -85,7 +85,7 @@ for test_dir_name in os.listdir("."):
 
         if test_ok:
             print(print_test_name + GREEN + " [ok]" + ENDC)
-            p = subprocess.check_output('rm -f out.s tokens.txt tree.*', stderr = subprocess.STDOUT, shell = True)
+            p = subprocess.check_output('rm -f out.s tokens* tree*', stderr = subprocess.STDOUT, shell = True)
         else:
             print(print_test_name + RED + " [ko]" + ENDC)
             

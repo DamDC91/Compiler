@@ -9,5 +9,5 @@ int main() {
             res = res + 1;
         }
 
-    debug res;
+    printf(res);
 }

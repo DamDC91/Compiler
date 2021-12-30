@@ -1,4 +1,3 @@
-
 int pow(int nb, int exp)
 {
     int i, res;
@@ -63,9 +62,9 @@ int abs(int nb)
 
 int malloc(int s)
 {
-    // min s = 2
     // negative size = used block
     // positive size = free block
+    // min s = 2
     if (s < 2)
         s = 2;
 
@@ -76,9 +75,7 @@ int malloc(int s)
         {
             if (blockSize != firstFree[blockSize])
             {
-                printf(-1);
-                int err = 1/0;
-                //Error TODO
+                exit();
             }
             if (blockSize <= s + 4) //  the remaining size is tiny, no spliting
             {
@@ -138,8 +135,7 @@ int free(int p)
     int size = -p[-1]; 
 
     if (p[-1] >= 0 || p[-1] != p[abs(size)])
-        int err = 1/0;
-        //Error TODO
+        exit();
         
 
     p[size] = size;

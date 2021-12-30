@@ -7,5 +7,5 @@ int fact(int a)
 }
 int main()
 {
-    debug fact(16);
+    printf(fact(16));
 }

@@ -1,6 +1,6 @@
 int toto ()
 {
-    debug 3+3;
+    printf(3+3);
 }
 
 int main()
@@ -8,6 +8,6 @@ int main()
     int a;
     a = 19;
     toto();
-    debug 19;
+    printf(19);
 }
 

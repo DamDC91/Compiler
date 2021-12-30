@@ -15,5 +15,5 @@ int main() {
         }
 
     }
-    debug res;
+    printf(res);
 }

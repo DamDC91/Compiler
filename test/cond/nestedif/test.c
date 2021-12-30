@@ -5,28 +5,28 @@ int main() {
     {
         if (a > 20)
         {
-            debug 1;
+            printf(1);
             if (a > 30)
             {
                 if (a > 40)
                 {
-                    debug 2;
+                    printf(2);
                 }
                 else if (a == 31)
                 {
-                    debug 3;
+                    printf(3);
                 }
                 else
                 {
-                    debug 4;
+                    printf(4);
                 }
             }
             else
             {
-                debug 4;
+                printf(4);
             }
         }
-        debug 6;
+        printf(6);
     }
-    debug 7;
+    printf(7);
 }

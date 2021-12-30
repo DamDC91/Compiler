@@ -7,5 +7,5 @@ int main() {
         if (i == 12)
             break;
     }
-    debug res;
+    printf(res);
 }

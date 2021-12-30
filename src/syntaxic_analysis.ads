@@ -39,12 +39,12 @@ package Syntaxic_Analysis is
                                 Node_Return,
                                 Node_Drop,
                                 Node_Instruction_Block,
-                                Node_Debug); -- temp
+                                Node_Null);
 
    subtype Operation_Node_Enum_Type is Node_Type_Enum_Type range Node_Op_Or_Boolean .. Node_Op_Modulo;
 
 
-   type Node_Variant_Type (Node_Type : Node_Type_Enum_Type := Node_Debug) is record
+   type Node_Variant_Type (Node_Type : Node_Type_Enum_Type := Node_Null) is record
       Line      : Positive;
       case Node_Type is
          when Node_Constant =>
@@ -72,9 +72,6 @@ package Syntaxic_Analysis is
    package Tree is new Ada.Containers.Indefinite_Multiway_Trees (Element_Type => Node_Variant_Type,
                                                                  "="          => Same_Node);
 
-   procedure Debug_Print_Tree (T : Tree.Tree);
-
-   procedure Debug_Print_Tree_Graphviz (T : Tree.Tree);
 
    function G return Tree.Tree;
 
@@ -94,7 +91,7 @@ package Syntaxic_Analysis is
 
    procedure Init;
 
-   function Debug_Print (N : Node_Variant_Type) return string;
+   --function Debug_Print (N : Node_Variant_Type) return string;
 
    subtype Operation_Token is Token.Token_Type_Enum_Type range Token.Tok_Plus .. Token.Tok_Or_Boolean;
 

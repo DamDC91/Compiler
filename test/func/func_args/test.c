@@ -1,7 +1,7 @@
 int print(int a, int b)
 {
-    debug a;
-    debug b;
+    printf(a);
+    printf(b);
 }
 
 int main()
@@ -9,6 +9,6 @@ int main()
     int a;
     a = 19;
     print(a, 4);
-    debug 0;
+    printf(0);
 }
 

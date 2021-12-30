@@ -36,5 +36,5 @@ int main()
         res = res + compute(res,i);
         i=inc(i);
     }while(check(i,5));
-    debug res;
+    printf(res);
 }

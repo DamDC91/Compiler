@@ -6,6 +6,6 @@ int main() {
         int a, x;
         a = 5;
         x = -3;
-        debug a + (b * x);
+        printf(a + (b * x));
     }
 }

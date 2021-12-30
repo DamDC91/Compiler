@@ -18,7 +18,7 @@ package body Lexical_Analysis is
 
    Line : Positive := 1;
 
-   Last_Id_Value : Positive := 3;
+   Last_Id_Value : Positive := 1;
 
    Association_Table : Token.Map.Map;
   
@@ -35,7 +35,7 @@ package body Lexical_Analysis is
 
    function Is_C_KeyWord (s : string) return boolean is
    begin
-      return s = "if" or s = "int" or s = "else" or s = "for" or s = "while" or s = "do" or s = "continue" or s = "break" or s = "return" or s = "debug"; -- temp
+      return s = "if" or s = "int" or s = "else" or s = "for" or s = "while" or s = "do" or s = "continue" or s = "break" or s = "return";
    end Is_C_KeyWord;
 
 
@@ -171,10 +171,6 @@ package body Lexical_Analysis is
                      elsif Id = "return" then
                         return (Has_Value => False,
                                 Token_Type => Token.Tok_Return,
-                                Line => Line);
-                     elsif Id = "debug" then
-                        return (Has_Value => False,
-                                Token_Type => Token.Tok_Debug,  -- Temp
                                 Line => Line);
                      else
                         raise Program_Error; -- impossible
@@ -421,10 +417,10 @@ package body Lexical_Analysis is
                   end;
                   
                   
-                  if Val_Read > Long_Long_Integer(Integer'Last) then
+                  if Val_Read > 2**31 - 1 then -- C int max
                      Warning (Msg => "constant overflow",
                               Line => Line);
-                     val := Integer (Val_Read mod (Long_Long_Integer (Integer'Last)) -1) + Integer'First;
+                     val := Integer ((Val_Read mod (2**31)) - 2**31);
                   else
                      val := Natural (Val_Read);
                   end if;
@@ -449,35 +445,46 @@ package body Lexical_Analysis is
 
 
    procedure Load(FileName : String) is
-      Debug_FileName : constant String := "tokens.txt";
+      Base_FileName : constant String := Ada.Directories.Base_Name (FileName);
+      Debug_FileName : constant String := "tokens_" & Base_FileName &".txt";
       use type Ada.Directories.File_Kind;
    begin
       if Index = 1 then
          Association_Table_Vector.Append ("putchar");
          Association_Table_Vector.Append ("getchar");
+         Association_Table_Vector.Append ("exit");
          Association_Table.Insert (Key      => "putchar",
                                    New_Item => 1);
          Association_Table.Insert (Key      => "getchar",
                                    New_Item => 2);
+         Association_Table.Insert (Key      => "exit",
+                                   New_Item => 3);
+         Last_Id_Value := 4;
       end if;
       Index := 1;
       Line := 1;
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
-       -- null Token, usefull to set the Line to 1 if there is an error at the begging of the file
+      -- null Token, usefull to set the Line to 1 if there is an error at the begging of the file
+      -- This token is never read
       Current_Token := (Has_Value => False,
                         Token_Type => Token.Tok_EOF,
                         Line       => 1);
-      -- the logic use the next tocken
       Next_Token := Get_Token;
 
       if Error_Log.Get_Debug_On then
          if Ada.Directories.Exists (Debug_FileName) and then Ada.Directories.Kind (Debug_FileName) /= Ada.Directories.Ordinary_File then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & Debug_FileName & "' cannot be created");
             raise Error_Log.Compilation_Error;
+         elsif not Ada.Directories.Exists(Debug_FileName) or not Ada.Text_IO.Is_Open (File_Info) then
+            Ada.Text_IO.Create(File => File_Info,
+                               Mode => Ada.Text_IO.Out_File,
+                               Name => Debug_FileName);
          end if;
-         Ada.Text_IO.Create(File => File_Info,
-                            Mode => Ada.Text_IO.Out_File,
-                            Name => Debug_FileName);
+         Ada.Text_IO.New_Line(File => File_Info);
+         Ada.Text_IO.Put_Line (File => File_Info,
+                               Item => "===" & Base_FileName & "===");
+         Ada.Text_IO.New_Line(File => File_Info);
+
       end if;
    end Load;
 

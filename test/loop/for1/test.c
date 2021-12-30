@@ -5,5 +5,5 @@ int main() {
     {
         res = res + i;
     }
-    debug res;
+    printf(res);
 }

@@ -9,7 +9,7 @@ int main() { /* blalbla
     /* DFQDFSQ
     debug a;//CDSDs
     */
-    debug a+3;
+    printf(a+3);
 }
 //DSDSD
 /*

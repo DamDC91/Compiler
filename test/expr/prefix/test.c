@@ -1,4 +1,4 @@
 int main() {
-    debug !!-+4522;
+    printf(!!-+4522);
 }
 

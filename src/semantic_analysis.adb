@@ -161,12 +161,20 @@ package body Semantic_Analysis is
       declare
          M : Map.Map;
       begin
+         -- putchar
          M.Insert (Key      => 1,
                    New_Item => (Symbol_Type => Symbol_Func,
                                 Decl_Line => 1,
                                 Is_Referenced => False,
                                 Nb_Args => 1));
+         -- getchar
          M.Insert (Key      => 2,
+                   New_Item => (Symbol_Type => Symbol_Func,
+                                Decl_Line => 1,
+                                Is_Referenced => False,
+                                Nb_Args => 0));
+         -- exit
+         M.Insert (Key      => 3,
                    New_Item => (Symbol_Type => Symbol_Func,
                                 Decl_Line => 1,
                                 Is_Referenced => False,
