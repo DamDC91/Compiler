@@ -41,6 +41,13 @@ procedure main is
                                                    Arg_Type    => Ada.Strings.Unbounded.Unbounded_String,
                                                    Default_Val => Ada.Strings.Unbounded.To_Unbounded_String ("out.s"));
 
+      package Output_Dirname is new Parse_Option (Parser      => Parser,
+                                                   Short       => "-d",
+                                                   Long        => "--output-dir",
+                                                   Help        => "Output directorie name",
+                                                   Arg_Type    => Ada.Strings.Unbounded.Unbounded_String,
+                                                   Default_Val => Ada.Strings.Unbounded.To_Unbounded_String ("./"));
+
       package Compile_Runtime is new Parse_Flag (Parser  => Parser,
                                                  Short   => "-r",
                                                  Long    => "--compile_runtime",
@@ -53,9 +60,9 @@ begin
    if Args.Parser.Parse and then (Args.Files.Get'Length > 0 or Args.Compile_Runtime.Get) then
 
       declare
-         Files_Dir : constant String := Ada.Directories.Current_Directory;
          Command : constant String := Ada.Directories.Full_Name (Ada.Command_Line.Command_Name);
-         Asm_Filename : constant String := Files_Dir & "/" & Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get);
+         Output_Dir : constant String := Ada.Strings.Unbounded.To_String (Args.Output_Dirname.Get);
+         Asm_Filename : constant String := Output_Dir & "/" & Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get);
          Id : constant Natural := Ada.Strings.Fixed.Index (Source  => Command,
                                                            Pattern => "/",
                                                            From    => Command'Last,
@@ -66,23 +73,43 @@ begin
          Runtime_Asm_File : constant String := Runtime_Dir & "runtime.s";
          Start_File : constant string := Runtime_Dir & "start.s";
          use type Ada.Calendar.Time;
+         use type Ada.Directories.File_Kind;
       begin
 
+         if not Ada.Directories.Exists (Runtime_Dir) then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime directory is not found");
+            raise Error_Log.Compilation_Error;
 
-         Syntaxic_Analysis.Init;
+         elsif not Ada.Directories.Exists (Runtime_Source_File) then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime source file is not found");
+            raise Error_Log.Compilation_Error;
 
+         elsif not Ada.Directories.Exists (Start_File) then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "start.s is not found");
+            raise Error_Log.Compilation_Error;
+
+         elsif not Ada.Directories.Exists (Output_Dir) or else Ada.Directories.Kind (Output_Dir) /= Ada.Directories.Directory then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Output directory doesn't exist");
+            raise Error_Log.Compilation_Error;
+
+         elsif Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get) /= Ada.Directories.Simple_Name (Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get)) then
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "invalid output file name");
+            raise Error_Log.Compilation_Error;
+         end if;
+
+         Error_Log.Set_Output_Dir (Output_Dir);
          -- Compiling runtime only if the code as been touch since the last compilation
          Error_Log.Set_Debug_On (Args.Compile_Runtime.Get and Args.debug.Get);
-          -- removing /bin/../runtime
+          -- removing /bin/../runtime if runtime.s already exist
          Error_Log.Set_Filename ((if Ada.Directories.Exists (Runtime_Asm_File) then Ada.Directories.Full_Name (Runtime_Source_File) else Runtime_Source_File));
          Lexical_Analysis.Load (Runtime_Source_File);
 
          declare
             T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
          begin
+            -- only run syntaxic and semantic analysis for setting loop and condition counter and the symbol table
             Semantic_Analysis.AST_Analyse (T);
 
-            -- only run syntaxic and semantic analysis for setting loup and cond counter and the symbol table
             if Args.Compile_Runtime.Get then
                Asm_Generation.Create_File(Filename => Runtime_Asm_File);
                Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
@@ -90,17 +117,17 @@ begin
                Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "Runtime compilation succeed");
 
             elsif Ada.Directories.Exists (Runtime_Asm_File) and then Ada.Directories.Modification_Time (Runtime_Asm_File) < Ada.Directories.Modification_Time (Runtime_Source_File) then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "Runtime has been modified, should be compile");
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Output, "Runtime has been modified since last compilation, should be compile");
 
             elsif not Ada.Directories.Exists (Runtime_Asm_File) then
-               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime need to be compile first, please add -r option");
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime need to be compile first, please use the -r option");
                raise Error_Log.Compilation_Error;
             end if;
          end;
 
          Asm_Generation.Create_File (Asm_Filename);
          Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
-         Ada.Directories.Set_Directory (Files_Dir);
+         --Ada.Directories.Set_Directory (Files_Dir);
 
          declare
             Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
@@ -143,10 +170,13 @@ begin
 exception
    when Error_Log.Compilation_Error =>
       Asm_Generation.Close_File;
+      Error_Log.Close_Token_File;
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Compilation failed");
       GNAT.OS_Lib.OS_Exit(1);
 
    when others =>
+      Asm_Generation.Close_File;
+      Error_Log.Close_Token_File;
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Bug report : please send a email with a reproducer at damien.de-campos@u-psud.fr");
       raise;
 end main;

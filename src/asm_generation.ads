@@ -6,8 +6,6 @@ package Asm_Generation is
    procedure Add_Runtime (Runtime : String);
    
    procedure Close_File;
-   
-   procedure Delete_File;
   
    procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor);
    

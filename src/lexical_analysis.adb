@@ -2,10 +2,8 @@ with Text_Utils;
 with Ada.Strings.Unbounded;
 with Ada.Characters.Handling;
 with Ada.Characters.Latin_1;
-with Ada.Text_IO;
 with Error_Log; 
 use Error_Log;
-with Ada.Directories;
 package body Lexical_Analysis is
 
    File_Content : Ada.Strings.Unbounded.Unbounded_String;
@@ -23,8 +21,6 @@ package body Lexical_Analysis is
    Association_Table : Token.Map.Map;
   
    Association_Table_Vector : Vector_Association_Table.Vector;
-   
-   File_Info : Ada.Text_IO.File_Type;
    
    
    function Get_Str_From_Assoc_Table (Id : Positive) return String is (Association_Table_Vector(Id));
@@ -445,22 +441,7 @@ package body Lexical_Analysis is
 
 
    procedure Load(FileName : String) is
-      Base_FileName : constant String := Ada.Directories.Base_Name (FileName);
-      Debug_FileName : constant String := "tokens_" & Base_FileName &".txt";
-      use type Ada.Directories.File_Kind;
    begin
-      if Index = 1 then
-         Association_Table_Vector.Append ("putchar");
-         Association_Table_Vector.Append ("getchar");
-         Association_Table_Vector.Append ("exit");
-         Association_Table.Insert (Key      => "putchar",
-                                   New_Item => 1);
-         Association_Table.Insert (Key      => "getchar",
-                                   New_Item => 2);
-         Association_Table.Insert (Key      => "exit",
-                                   New_Item => 3);
-         Last_Id_Value := 4;
-      end if;
       Index := 1;
       Line := 1;
       File_Content := Ada.Strings.Unbounded.To_Unbounded_String (Text_Utils.Get_File_Content(FileName));
@@ -471,29 +452,13 @@ package body Lexical_Analysis is
                         Line       => 1);
       Next_Token := Get_Token;
 
-      if Error_Log.Get_Debug_On then
-         if Ada.Directories.Exists (Debug_FileName) and then Ada.Directories.Kind (Debug_FileName) /= Ada.Directories.Ordinary_File then
-            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & Debug_FileName & "' cannot be created");
-            raise Error_Log.Compilation_Error;
-         elsif not Ada.Directories.Exists(Debug_FileName) or not Ada.Text_IO.Is_Open (File_Info) then
-            Ada.Text_IO.Create(File => File_Info,
-                               Mode => Ada.Text_IO.Out_File,
-                               Name => Debug_FileName);
-         end if;
-         Ada.Text_IO.New_Line(File => File_Info);
-         Ada.Text_IO.Put_Line (File => File_Info,
-                               Item => "===" & Base_FileName & "===");
-         Ada.Text_IO.New_Line(File => File_Info);
-
-      end if;
+      Error_Log.Create_Token_File (FileName => FileName);
    end Load;
 
 
    procedure Advance_Token is
    begin
-      if Error_Log.Get_Debug_On then
-         Ada.Text_IO.Put_Line (File_Info, Token.Debug_Print (Next_Token));
-      end if;
+      Error_Log.Debug_Print_Token (Next_Token);
       Current_Token := Next_Token;
       Next_Token := Get_Token;
    end Advance_Token;
@@ -533,11 +498,18 @@ package body Lexical_Analysis is
       return Next_Token;
    end Get_Next_Token;
    
-   procedure Close_Debug is 
-   begin
-      if Error_Log.Get_Debug_On and Ada.Text_IO.Is_Open (File_Info) then
-         Ada.Text_IO.Close (File_Info);
-      end if;
-   end Close_Debug;
+   
+   
+begin
+   Association_Table_Vector.Append ("putchar");
+   Association_Table_Vector.Append ("getchar");
+   Association_Table_Vector.Append ("exit");
+   Association_Table.Insert (Key      => "putchar",
+                             New_Item => 1);
+   Association_Table.Insert (Key      => "getchar",
+                             New_Item => 2);
+   Association_Table.Insert (Key      => "exit",
+                             New_Item => 3);
+   Last_Id_Value := 4;
 
 end Lexical_Analysis;

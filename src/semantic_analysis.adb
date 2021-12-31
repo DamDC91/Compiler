@@ -18,9 +18,9 @@ package body Semantic_Analysis is
                                                   Hash            => Hash,
                                                   Equivalent_Keys => "=");
    
-   package Vec is new  Ada.Containers.Indefinite_Vectors (Index_Type   => Natural,
-                                                          Element_Type => Map.Map,
-                                                          "="          => Map."=");
+   package Vec is new Ada.Containers.Indefinite_Vectors (Index_Type   => Natural,
+                                                         Element_Type => Map.Map,
+                                                         "="          => Map."=");
    
    Var_Vec : Vec.Vector;
    procedure AST_Analyse (T : in out Syntaxic_Analysis.Tree.Tree) is

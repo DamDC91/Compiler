@@ -6,24 +6,24 @@ with Error_Log;
 use Error_Log;
 with Lexical_Analysis;
 with Text_Utils;
-with Ada.Directories;
 with Ada.Assertions;
+with Ada.Exceptions;
 package body Asm_Generation is
    
    File : File_Type;
    Tab : constant string := "    ";
    
    procedure Create_File (FileName : String) is
-      use type Ada.Directories.File_Kind;
+
    begin      
-      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
-         raise Error_Log.Compilation_Error;
-      end if;
       Create (File => File,
               Mode => Ada.Text_IO.Out_File,
               Name => FileName);
-
+   exception
+      when e : others =>
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (e));
+         raise compilation_Error;
    end Create_File;
    
    procedure Add_Runtime (Runtime : String) is
@@ -39,20 +39,13 @@ package body Asm_Generation is
       end if;
    end Close_File;
    
-   procedure Delete_File is
-   begin
-      if Ada.Text_IO.Is_Open (File) then
-         Delete (File);
-      end if;
-   end Delete_File;
-   
    procedure Add_Start (Start_Filename : String) is
       str : constant String := Text_Utils.Get_File_Content (Start_Filename);
    begin
       Put_Line (File, str(str'First..str'Last-1)); 
    end Add_Start;
    
-   Function Image (Nb : Integer) return string is (Ada.Strings.Fixed.Trim (Nb'Image, Ada.Strings.Both));
+   function Image (Nb : Integer) return string is (Ada.Strings.Fixed.Trim (Nb'Image, Ada.Strings.Both));
    
    function Get_Asm_Instruction (N : Syntaxic_Analysis.Operation_Node_Enum_Type) return String 
    is
@@ -77,7 +70,7 @@ package body Asm_Generation is
    
 
    
-   -- we assume that the tree is correct, no check are done
+   -- we assume that the tree is correct, no check
    procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor) is
       Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       use type Ada.Containers.Count_Type;

@@ -16,8 +16,6 @@ package Lexical_Analysis is
 
    function Get_Next_Token return Token.Token_Record_Type;
 
-   procedure Close_Debug;
-
    package Vector_Association_Table is new Ada.Containers.Indefinite_Vectors (Index_Type   => Positive,
                                                                               Element_Type => String);
    function Get_Str_From_Assoc_Table (Id : Positive) return String;

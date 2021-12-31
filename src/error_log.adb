@@ -5,13 +5,18 @@ use Ada.Strings.Unbounded;
 with Ada.Directories;
 with Ada.Strings.Fixed;
 with Tree_Graphviz;
+with Ada.Exceptions;
 package body Error_Log is
 
    Current_FileName : Unbounded_String;
 
+   Output_Dir : Unbounded_String;
+
    Warning_On : Boolean := False;
 
    Debug_On : Boolean := False;
+
+   File_Token_List : Ada.Text_IO.File_Type;
 
    procedure Set_Warning_On (W : Boolean) is
    begin
@@ -29,7 +34,15 @@ package body Error_Log is
    begin
       Put_Line (Standard_Error, FileName & ":" & Line'Image & ": error " & Msg);
 
-      Open(File, In_File, FileName);
+      begin
+         Open(File, In_File, FileName);
+      exception
+         when e : others =>
+            Put_Line (Standard_Error, "error : '" & FileName & "' cannot be open");
+            Put_Line (Standard_Error, Ada.Exceptions.Exception_Message (e));
+            raise Error_Log.compilation_Error;
+      end;
+
       if Line > 1 then
          Skip_Line (File => File,
                     Spacing => Ada.Text_IO.Count (Line-1));
@@ -47,7 +60,14 @@ package body Error_Log is
       If Warning_On then
          Put_Line (Standard_Error, FileName & ":" & Line'Image & ": Warning " & Msg);
 
-         Open(File, In_File, FileName);
+         begin
+            Open(File, In_File, FileName);
+         exception
+            when e : others =>
+               Put_Line (Standard_Error, "error : '" & FileName & "' cannot be open");
+               Put_Line (Standard_Error, Ada.Exceptions.Exception_Message (e));
+               raise Error_Log.compilation_Error;
+         end;
          if Line > 1 then
             Skip_Line (File => File,
                        Spacing => Ada.Text_IO.Count (Line-1));
@@ -96,16 +116,19 @@ package body Error_Log is
          Ada.Text_IO.Put_Line (Debug_File_Tree, Debug_Print (N));
       end Print_Tree;
 
-      FileName : constant String := "tree_" & Ada.Directories.Base_Name (To_String (Current_FileName)) & ".txt";
-      use type Ada.Directories.File_Kind;
+      FileName : constant String := Get_Output_Dir & "/tree_" & Ada.Directories.Base_Name (To_String (Current_FileName)) & ".txt";
    begin
-      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
-         raise Error_Log.Compilation_Error;
-      end if;
-      Ada.Text_IO.Create (File => Debug_File_Tree,
-                          Mode => Ada.Text_IO.Out_File,
-                          Name => FileName);
+      begin
+         Ada.Text_IO.Create (File => Debug_File_Tree,
+                             Mode => Ada.Text_IO.Out_File,
+                             Name => FileName);
+      exception
+         when e : others =>
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (e));
+            raise compilation_Error;
+      end;
+
       Syntaxic_Analysis.Tree.Iterate (T, Print_Tree'Access);
       Ada.Text_IO.Close (Debug_File_Tree);
    end Debug_Print_Tree;
@@ -140,24 +163,74 @@ package body Error_Log is
                                              Depth           => Syntaxic_Analysis.Tree.Depth,
                                              Get_Node_Label  => Get_label,
                                              Get_Arrow_Label => Get_arrow);
-      F : File_Type;
-      FileName : constant String := "tree_" & Ada.Directories.Base_Name (To_String (Current_FileName)) & ".gv";
-      use type Ada.Directories.File_Kind;
+      File : File_Type;
+      FileName : constant String := Get_Output_Dir & "/tree_" & Ada.Directories.Base_Name (To_String (Current_FileName)) & ".gv";
    begin
-      if Ada.Directories.Exists (FileName) and then Ada.Directories.Kind (FileName) /= Ada.Directories.Ordinary_File then
-         Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
-         raise Error_Log.Compilation_Error;
-      end if;
-      Create (File => F,
-              Mode => Out_File,
-              Name => FileName);
-      Put_Line (F, "diGraph Tree {");
+      begin
+         Create (File => File,
+                 Mode => Out_File,
+                 Name => FileName);
+      exception
+         when e : others =>
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
+            Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (e));
+            raise compilation_Error;
+      end;
+
+      Put_Line (File, "diGraph Tree {");
       For C in T.Iterate loop
-         Graphviz.Put (F, C);
+         Graphviz.Put (File, C);
       end loop;
-      Put_Line (F, "}");
-      close (F);
+      Put_Line (File, "}");
+      close (File);
    end Debug_Print_Tree_Graphviz;
 
+
+   procedure Debug_Print_Token (T : Token.Token_Record_Type) is
+   begin
+      if Error_Log.Get_Debug_On then
+         Ada.Text_IO.Put_Line (File_Token_List, Token.Debug_Print (T));
+      end if;
+   end Debug_Print_Token;
+
+
+   procedure Create_Token_File (FileName : String) is
+      Base_FileName : constant String := Ada.Directories.Base_Name (FileName);
+      Debug_FileName : constant String := Get_Output_Dir & "/tokens_" & Base_FileName &".txt";
+   begin
+      if Debug_On then
+         if Ada.Text_IO.Is_Open (File_Token_List) then
+            Close_Token_File;
+         end if;
+
+         begin
+            Ada.Text_IO.Create(File => File_Token_List,
+                               Mode => Ada.Text_IO.Out_File,
+                               Name => Debug_FileName);
+         exception
+            when e : others =>
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & Debug_FileName & "' cannot be created");
+               Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (e));
+               raise compilation_Error;
+         end;
+      end if;
+   end Create_Token_File;
+
+   procedure Close_Token_File is
+   begin
+      if Ada.Text_IO.Is_Open (File_Token_List) and Debug_On then
+         Ada.Text_IO.Close (File_Token_List);
+      end if;
+   end Close_Token_File;
+
+   procedure Set_Output_Dir (s : String) is
+   begin
+      Output_Dir := To_Unbounded_String (s);
+   end Set_Output_Dir;
+
+   function Get_Output_Dir return String is
+   begin
+      return To_String (Output_Dir);
+   end Get_Output_Dir;
 
 end Error_Log;

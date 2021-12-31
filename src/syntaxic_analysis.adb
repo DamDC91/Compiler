@@ -14,11 +14,6 @@ package body Syntaxic_Analysis is
       return Result : Node_Variant_Type (Node_Type => Node_Type);
    end Set_Discriminant;
 
-   procedure Init is
-   begin
-      null;
-   end Init;
-
    function G return Tree.Tree is
       N : Tree.Tree;
       Tmp : Tree.Tree;
@@ -41,7 +36,6 @@ package body Syntaxic_Analysis is
       if Error_Log.Get_Debug_On then
          Debug_Print_Tree (N);
          Debug_Print_Tree_Graphviz (N);
-         Lexical_Analysis.Close_Debug;
       end if;
       return N;
    exception
@@ -49,7 +43,6 @@ package body Syntaxic_Analysis is
          if Error_Log.Get_Debug_On then
             Debug_Print_Tree (N);
             Debug_Print_Tree_Graphviz (N);
-            Lexical_Analysis.Close_Debug;
          end if;
          raise;
    end G;

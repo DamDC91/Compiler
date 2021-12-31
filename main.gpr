@@ -7,7 +7,7 @@ project main is
     for main use ("main.adb");
     
     package compiler is
-    	for switches ("Ada") use ("-g", "-gnatwa");
+    	for switches ("Ada") use ("-g", "-gnatwae");
    end Compiler;	
    package Builder is
       for Executable ("main.adb") use "compiler";

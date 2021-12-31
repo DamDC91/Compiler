@@ -89,8 +89,6 @@ package Syntaxic_Analysis is
 
    function F return Tree.Tree;
 
-   procedure Init;
-
    --function Debug_Print (N : Node_Variant_Type) return string;
 
    subtype Operation_Token is Token.Token_Type_Enum_Type range Token.Tok_Plus .. Token.Tok_Or_Boolean;
