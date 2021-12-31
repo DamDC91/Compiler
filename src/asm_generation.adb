@@ -77,6 +77,7 @@ package body Asm_Generation is
    
 
    
+   -- we assume that the tree is correct, no check are done
    procedure Generate_Asm (C : Syntaxic_Analysis.Tree.Cursor) is
       Node : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.Element (C);
       use type Ada.Containers.Count_Type;
@@ -93,16 +94,12 @@ package body Asm_Generation is
             
          when Syntaxic_Analysis.Node_Minus_U =>
             Put_Line (File, Tab & "push 0");
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-               raise Constraint_Error with "AST invalid";
-            end if;
+            Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 1, "AST invalid 1");
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, Tab & "sub");
             
          when Syntaxic_Analysis.Node_Not =>
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-               raise Constraint_Error with "AST invalid";
-            end if;
+            Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 1, "AST invalid 2");
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line (File, Tab & "not");
             
@@ -141,16 +138,12 @@ package body Asm_Generation is
             end;
             
          when Syntaxic_Analysis.Operation_Node_Enum_Type =>
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 then
-               raise Constraint_Error with "AST invalid";
-            end if;
+            Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 2, "AST invalid 3");
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
             Put_Line (File, Tab &  Get_Asm_Instruction (Node.Node_Type));      
          when Syntaxic_Analysis.Node_Drop =>
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 1 then
-               raise Constraint_Error with "AST invalid";
-            end if;
+            Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 1, "AST invalid 4");
             Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             Put_Line(File, Tab & "drop");
          when Syntaxic_Analysis.Node_Instruction_Block =>
@@ -159,10 +152,10 @@ package body Asm_Generation is
                                                      Process => Call_Generate_Asm'Access);
             
          when Syntaxic_Analysis.Node_Null =>
-            raise Constraint_Error with "AST invalid";
+            raise Program_Error with "AST invalid 5";
             
          when Syntaxic_Analysis.Node_Var_Decl => 
-            if Syntaxic_Analysis.Tree.Child_Count (C) = 1 then
+            if Syntaxic_Analysis.Tree.Child_Count (C) = 1 then -- declaration and assignement
                Generate_Asm (C => Syntaxic_Analysis.Tree.First_Child(C));
             end if;
             
@@ -176,7 +169,7 @@ package body Asm_Generation is
                use type Syntaxic_Analysis.Node_Type_Enum_Type;
             begin
                Ada.Assertions.Assert (First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref or First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Dereference, 
-                                      "AST invalid");
+                                      "AST invalid 7");
                if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
                   Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
@@ -193,9 +186,7 @@ package body Asm_Generation is
             Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
          when Syntaxic_Analysis.Node_Cond => 
-            if Syntaxic_Analysis.Tree.Child_Count (C) /= 2 and Syntaxic_Analysis.Tree.Child_Count (C) /= 3 then
-               raise Constraint_Error with "AST invalid";
-            end if;
+            Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 2 or Syntaxic_Analysis.Tree.Child_Count (C) = 3, "AST invalid 8");
             declare
                Cond_Nb : constant Positive := Syntaxic_Analysis.Tree.Element(C).Cond_Count;
                First_Child : constant Syntaxic_Analysis.Tree.Cursor := Syntaxic_Analysis.Tree.First_Child(C);
@@ -233,16 +224,13 @@ package body Asm_Generation is
             declare
                Current_Loop_Nb : Constant Positive := Syntaxic_Analysis.Tree.Element (C).Loop_Count;
             begin
-               if Syntaxic_Analysis.Tree.Child_Count(C) = 1 or Syntaxic_Analysis.Tree.Child_Count (C) = 3 then
-                  Put_Line (File, ".start_loop_" & Image (Current_Loop_Nb));
+               Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count(C) = 1 or Syntaxic_Analysis.Tree.Child_Count (C) = 3, "AST invalid 9");
+               Put_Line (File, ".start_loop_" & Image (Current_Loop_Nb));
                   
-                  Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
-                                                           Process => Call_Generate_Asm'Access);
-                  Put_Line (File, Tab & "jump start_loop_" & Image (Current_Loop_Nb));
-                  Put_Line (File, ".end_loop_" & Image (Current_Loop_Nb));               
-               else
-                  Raise Constraint_Error with "AST Invalid";
-               end if;
+               Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
+                                                        Process => Call_Generate_Asm'Access);
+               Put_Line (File, Tab & "jump start_loop_" & Image (Current_Loop_Nb));
+               Put_Line (File, ".end_loop_" & Image (Current_Loop_Nb));               
             end;
          when Syntaxic_Analysis.Node_Call =>
             Put_Line (File, Tab & "prep " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Func_Key));
