@@ -1,1 +1,3 @@
-int main() debug 1/0;
+int main() {
+  printf(1/0);
+}
