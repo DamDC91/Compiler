@@ -73,8 +73,8 @@ package body Syntaxic_Analysis is
                      A : Tree.Tree := E(Op.Right_Priority);
                      New_N : Tree.Tree;
                      Pos : Tree.Cursor;
-                     unused : Tree.Cursor := Tree.First_Child (N.Root);
-                     unused2 : Tree.Cursor := Tree.First_Child (A.Root);
+                     Pos_Left : Tree.Cursor := Tree.First_Child (N.Root);
+                     Pos_Right : Tree.Cursor := Tree.First_Child (A.Root);
                      New_Item : Node_Variant_Type := Set_Discriminant (Op.Node);
                   begin
                      New_Item.Line := Next.Line;
@@ -87,13 +87,13 @@ package body Syntaxic_Analysis is
                                           Parent   => Pos,
                                           Before   => Tree.No_Element,
                                           Source   => N,
-                                          Position => unused);
+                                          Position => Pos_Left);
 
                      Tree.Splice_Subtree (Target => New_N,
                                           Parent   => Pos,
                                           Before   => Tree.No_Element,
                                           Source   => A,
-                                          Position => unused2);
+                                          Position => Pos_Right);
                      N := New_N;
                   end;
                end;
@@ -111,87 +111,87 @@ package body Syntaxic_Analysis is
       elsif Lexical_Analysis.Check_Token(Token.Tok_Minus) then
          declare
             T  : Tree.Tree := P;
-            NT : Tree.Tree;
-            Pos : Tree.Cursor;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
+            Res : Tree.Tree;
+            New_Item_Pos : Tree.Cursor;
+            Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
-            NT.Insert_Child (Parent   => NT.Root,
+            Res.Insert_Child (Parent   => Res.Root,
                              Before   => Tree.No_Element,
                              New_Item => (Node_Type => Node_Minus_U,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
+                             Position => New_Item_Pos);
 
-            Tree.Splice_Subtree (Target => NT,
-                                 Parent   => Pos,
+            Tree.Splice_Subtree (Target => Res,
+                                 Parent   => New_Item_Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
-                                 Position => unused);
+                                 Position => Source_Pos);
 
-            return NT;
+            return Res;
          end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Exclamation_Mark) then
          declare
             T  : Tree.Tree := P;
-            NT : Tree.Tree;
-            Pos : Tree.Cursor;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
+            Res : Tree.Tree;
+            New_Item_Pos : Tree.Cursor;
+            Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
-            NT.Insert_Child (Parent   => NT.Root,
+            Res.Insert_Child (Parent   => Res.Root,
                              Before   => Tree.No_Element,
                              New_Item => (Node_Type => Node_Not,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
+                             Position => New_Item_Pos);
 
-            Tree.Splice_Subtree (Target => NT,
-                                 Parent   => Pos,
+            Tree.Splice_Subtree (Target => Res,
+                                 Parent   => New_Item_Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
-                                 Position => unused);
+                                 Position => Source_Pos);
 
 
-            return NT;
+            return Res;
          end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Asterisk) then
          declare
             T  : Tree.Tree := P;
-            NT : Tree.Tree;
-            Pos : Tree.Cursor;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
+            Res : Tree.Tree;
+            New_Item_Pos : Tree.Cursor;
+            Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
-            NT.Insert_Child (Parent   => NT.Root,
+            Res.Insert_Child (Parent   => Res.Root,
                              Before   => Tree.No_Element,
                              New_Item => (Node_Type => Node_Dereference,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
+                             Position => New_Item_Pos);
 
-            Tree.Splice_Subtree (Target => NT,
-                                 Parent   => Pos,
+            Tree.Splice_Subtree (Target => Res,
+                                 Parent   => New_Item_Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
-                                 Position => unused);
+                                 Position => Source_Pos);
 
-            return NT;
+            return Res;
          end;
       elsif Lexical_Analysis.Check_Token (Token.Tok_Ampersand) then
          declare
             T  : Tree.Tree := P;
-            NT : Tree.Tree;
-            Pos : Tree.Cursor;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
+            Res : Tree.Tree;
+            New_Item_Pos : Tree.Cursor;
+            Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
-            NT.Insert_Child (Parent   => NT.Root,
+            Res.Insert_Child (Parent   => Res.Root,
                              Before   => Tree.No_Element,
                              New_Item => (Node_Type => Node_Address,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
+                             Position => New_Item_Pos);
 
-            Tree.Splice_Subtree (Target => NT,
-                                 Parent   => Pos,
+            Tree.Splice_Subtree (Target => Res,
+                                 Parent   => New_Item_Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
-                                 Position => unused);
+                                 Position => Source_Pos);
 
-            return NT;
+            return Res;
          end;
       else
          return S;
@@ -252,7 +252,7 @@ package body Syntaxic_Analysis is
                                   New_Item => (Node_Type => Node_Var_Ref,
                                                Line => Id.Line,
                                                Ref_Var_Key => Id.Value,
-                                               Var_Stack_Index => 0));
+                                               Var_Stack_OffSett => 0));
                   return T;
                end;
             end if;
@@ -352,7 +352,6 @@ package body Syntaxic_Analysis is
          declare
             N : Tree.Tree;
             Pos : Tree.Cursor;
-            unused : Tree.Cursor;
             Id : constant Token.Token_Record_Type := Lexical_Analysis.Get_Next_Token;
          begin
             N.Insert_Child (Parent   => N.Root,
@@ -387,7 +386,7 @@ package body Syntaxic_Analysis is
                                   New_Item => (Node_Type => Node_Var_Ref,
                                                Line => Id.Line,
                                                Ref_Var_Key => Id.Value,
-                                               Var_Stack_Index => 0));
+                                               Var_Stack_OffSett => 0));
 
                   Pos_Sub := Tree.First_Child (E1.Root);
                   Tree.Splice_Subtree (Target   => N,
@@ -428,7 +427,7 @@ package body Syntaxic_Analysis is
                                         New_Item => (Node_Type => Node_Var_Ref,
                                                      Line => Id.Line,
                                                      Ref_Var_Key => Id.Value,
-                                                     Var_Stack_Index => 0));
+                                                     Var_Stack_OffSett => 0));
 
                         Pos_Sub := Tree.First_Child (E1.Root);
                         Tree.Splice_Subtree (Target   => N,
@@ -455,7 +454,7 @@ package body Syntaxic_Analysis is
                                     Before => Tree.No_Element,
                                     New_Item => (Node_Type => Node_Cond,
                                                  Line => Lexical_Analysis.Get_Current_Token.Line,
-                                                 Cond_Count => Condition_Count),
+                                                 Cond_NB => Condition_Count),
                                     Position => Pos);
 
             Condition_Count := Condition_Count + 1;
@@ -507,7 +506,7 @@ package body Syntaxic_Analysis is
                                     Before   => Tree.No_Element,
                                     New_Item => (Node_Type => Node_Loop,
                                                  Line => Lexical_Analysis.Get_Current_Token.Line,
-                                                 Loop_Count => Loop_Count),
+                                                 Loop_NB => Loop_Count),
                                     Position    => Pos);
             Loop_Count := Loop_Count + 1;
 
@@ -519,14 +518,14 @@ package body Syntaxic_Analysis is
                                     Before   => Tree.No_Element,
                                     New_Item => (Node_Type => Node_Label,
                                                  Line => Lexical_Analysis.Get_Current_Token.Line,
-                                                 Loop_Count => Current_Loop_Nb),
+                                                 Loop_NB => Current_Loop_Nb),
                                     Position    => Pos);
 
             Cond_Node.Insert_Child (Parent   => Pos,
                                     Before   => Tree.No_Element,
                                     New_Item => (Node_Type => Node_Cond,
                                                  Line => Lexical_Analysis.Get_Current_Token.Line,
-                                                 Cond_Count => Condition_Count),
+                                                 Cond_NB => Condition_Count),
                                     Position    => Pos_Sub);
             Pos := Pos_Sub;
 
@@ -548,7 +547,7 @@ package body Syntaxic_Analysis is
                                     Before => Tree.No_Element,
                                     New_Item => (Node_Type => Node_Break,
                                                  Line => Lexical_Analysis.Get_Current_Token.Line,
-                                                 Loop_Count => Current_Loop_Nb));
+                                                 Loop_NB => Current_Loop_Nb));
 
 
 
@@ -606,7 +605,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Loop,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Loop_Count),
+                                         Loop_NB => Loop_Count),
                             Position    => Pos_Sub);
             Pos := Pos_Sub;
 
@@ -626,7 +625,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Cond,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Cond_Count => Condition_Count),
+                                         Cond_NB => Condition_Count),
                             Position    => Pos_Sub);
             Pos := Pos_Sub;
             Condition_Count := Condition_Count + 1;
@@ -651,7 +650,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Break,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Current_Loop_Nb));
+                                         Loop_NB => Current_Loop_Nb));
 
 
 
@@ -668,7 +667,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Label,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Current_Loop_Nb),
+                                         Loop_NB => Current_Loop_Nb),
                             Position    => Pos_Sub);
             Pos := Pos_Sub;
 
@@ -701,7 +700,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Loop,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Loop_Count),
+                                         Loop_NB => Loop_Count),
                             Position    => Pos_Sub);
             Loop_Count := Loop_Count + 1;
 
@@ -730,7 +729,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Label,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Current_Loop_Nb),
+                                         Loop_NB => Current_Loop_Nb),
                             Position    => Pos_Sub);
 
             Pos := Pos_Sub;
@@ -738,7 +737,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Cond,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Cond_Count => Condition_Count),
+                                         Cond_NB => Condition_Count),
                             Position    => Pos_Sub);
             Condition_Count := Condition_Count + 1;
 
@@ -762,7 +761,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Break,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Current_Loop_Nb),
+                                         Loop_NB => Current_Loop_Nb),
                             Position    => Pos_Sub);
             return N;
 
@@ -777,7 +776,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Continue,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Loop_Count - 1));
+                                         Loop_NB => Loop_Count - 1));
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
             return N;
          end;
@@ -789,7 +788,7 @@ package body Syntaxic_Analysis is
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Break,
                                          Line => Lexical_Analysis.Get_Current_Token.Line,
-                                         Loop_Count => Loop_Count - 1));
+                                         Loop_NB => Loop_Count - 1));
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
             return N;
          end;
@@ -797,42 +796,42 @@ package body Syntaxic_Analysis is
          declare
             N : Tree.Tree;
             E1 : Tree.Tree := E;
-            Pos : Tree.Cursor;
+            Source_Pos : Tree.Cursor;
          begin
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
             N.Insert_Child (Parent   => N.Root,
                             Before   => Tree.No_Element,
                             New_Item => (Node_Type => Node_Return,
                                          Line => Lexical_Analysis.Get_Current_Token.Line));
-            Pos := Tree.First_Child (E1.Root);
+            Source_Pos := Tree.First_Child (E1.Root);
             Tree.Splice_Subtree (Target   => N,
                                  Parent   => Tree.First_Child (N.Root),
                                  Before   => Tree.No_Element,
                                  Source   => E1,
-                                 Position => Pos);
+                                 Position => Source_Pos);
             return N;
          end;
       else
          declare
             T : Tree.Tree := E;
-            NT : Tree.Tree;
-            unused : Tree.Cursor := Tree.First_Child (T.Root);
-            Pos : Tree.Cursor;
+            Res : Tree.Tree;
+            Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
+            New_Item_Pos : Tree.Cursor;
          begin
-            NT.Insert_Child (Parent   => NT.Root,
+            Res.Insert_Child (Parent   => Res.Root,
                              Before   => Tree.No_Element,
                              New_Item => (Node_Type => Node_Drop,
                                           Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => Pos);
+                             Position => New_Item_Pos);
 
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
 
-            Tree.Splice_Subtree (Target   => NT,
-                                 Parent   => Pos,
+            Tree.Splice_Subtree (Target   => Res,
+                                 Parent   => New_Item_Pos,
                                  Before   => Tree.No_Element,
                                  Source   => T,
-                                 Position => unused);
-            return NT;
+                                 Position => Source_Pos);
+            return Res;
          end;
       end if;
    end I;
@@ -904,7 +903,7 @@ package body Syntaxic_Analysis is
          when Node_Var_Decl =>
             Ok := L.Var_Key = R.Var_Key;
          when Node_Var_Ref =>
-            Ok := L.Ref_Var_Key = R.Ref_Var_Key and L.Var_Stack_Index = R.Var_Stack_Index;
+            Ok := L.Ref_Var_Key = R.Ref_Var_Key and L.Var_Stack_OffSett = R.Var_Stack_OffSett;
          when others => null;
          end case;
       end if;

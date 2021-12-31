@@ -10,7 +10,6 @@ with Error_Log;
 with Ada.Command_Line;
 with Ada.Text_IO;
 with Ada.Calendar;
-with GNAT.OS_Lib;
 
 procedure main is
 
@@ -126,8 +125,6 @@ begin
          end;
 
          Asm_Generation.Create_File (Asm_Filename);
-         Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
-         --Ada.Directories.Set_Directory (Files_Dir);
 
          declare
             Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
@@ -156,6 +153,7 @@ begin
             end loop;
          end;
 
+         Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
          Asm_Generation.Add_Start (Start_Filename => Start_File);
 
          Asm_Generation.Close_File;
@@ -172,7 +170,6 @@ exception
       Asm_Generation.Close_File;
       Error_Log.Close_Token_File;
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Compilation failed");
-      GNAT.OS_Lib.OS_Exit(1);
 
    when others =>
       Asm_Generation.Close_File;

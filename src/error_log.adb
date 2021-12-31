@@ -97,7 +97,11 @@ package body Error_Log is
          when Syntaxic_Analysis.Node_Var_Decl =>
             return "(" & N.Node_Type'Image & ", Var_Key:" & N.Var_Key'Image & ", l:" & N.Line'Image & ")";
          when Syntaxic_Analysis.Node_Var_Ref =>
-            return "(" & N.Node_Type'Image & ", Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & " l:" & N.Line'Image & ")";
+            return "(" & N.Node_Type'Image & ", Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_OffSett'Image & " l:" & N.Line'Image & ")";
+         when Syntaxic_Analysis.Node_Body_Func =>
+            return "(" & N.Node_Type'Image & ", Name_Key:" & N.Name_Key'Image & ", Nb_Var:" & N.Nb_Var'Image & " l:" & N.Line'Image & ")";
+         when Syntaxic_Analysis.Node_Call =>
+            return "(" & N.Node_Type'Image & ", Ref_Func_Key:" & N.Ref_Func_Key'Image & ", l:" & N.Line'Image & ")";
          when others =>
             return "(" & N.Node_Type'Image & ", l:" & N.Line'Image & ")";
       end case;
@@ -149,7 +153,11 @@ package body Error_Log is
          when Syntaxic_Analysis.Node_Var_Decl =>
             return Node_Img & "(Var_Key:" & N.Var_Key'Image & ")";
          when Syntaxic_Analysis.Node_Var_Ref =>
-            return Node_Img & "(Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_Index'Image & ")";
+            return Node_Img & "(Ref_Var_Key:" & N.Ref_Var_Key'Image & ", Var_Stack_Idx:" & N.Var_Stack_OffSett'Image & ")";
+         when Syntaxic_Analysis.Node_Body_Func =>
+            return Node_Img & "(Name_Key:" & N.Name_Key'Image & ", Nb_Var:" & N.Nb_Var'Image & ")";
+         when Syntaxic_Analysis.Node_Call =>
+            return Node_Img & "(Ref_Func_Key:" & N.Ref_Func_Key'Image & ")";
          when others =>
             return Node_Img;
          end case;

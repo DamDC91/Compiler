@@ -14,7 +14,7 @@ package Semantic_Analysis is
          when Symbol_Var => 
             Idx : Natural;
             Is_Init : Boolean;
-            Is_Arg_Var : Boolean;
+            Is_Argument : Boolean;
       end case;
    end record;
    

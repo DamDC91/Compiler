@@ -105,7 +105,7 @@ package body Asm_Generation is
                else
                   declare
                      Child : constant Syntaxic_Analysis.Node_Variant_Type := Syntaxic_Analysis.Tree.First_Child_Element (C);
-                     Index : constant Natural := (Child.Var_Stack_Index + 1);
+                     Index : constant Natural := (Child.Var_Stack_OffSett + 1);
                   begin
                      Put_Line (File, Tab & "prep start2");
                      Put_Line (File, Tab & "add");
@@ -153,7 +153,7 @@ package body Asm_Generation is
             end if;
             
          when Syntaxic_Analysis.Node_Var_Ref => 
-            Put_Line (File, Tab & "get "& Node.Var_Stack_Index'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Var_Key));
+            Put_Line (File, Tab & "get "& Node.Var_Stack_OffSett'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (Node.Ref_Var_Key));
             
          when Syntaxic_Analysis.Node_Op_Assignment =>
             declare
@@ -166,7 +166,7 @@ package body Asm_Generation is
                if First_Child_Node.Node_Type = Syntaxic_Analysis.Node_Var_Ref then
                   Generate_Asm (c => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
-                  Put_Line (File, Tab & "set " & First_Child_Node.Var_Stack_Index'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (First_Child_Node.Ref_Var_Key));
+                  Put_Line (File, Tab & "set " & First_Child_Node.Var_Stack_OffSett'Image & " ; " & Lexical_Analysis.Get_Str_From_Assoc_Table (First_Child_Node.Ref_Var_Key));
                else
                   Generate_Asm (C => Syntaxic_Analysis.Tree.Last_Child(C));
                   Put_Line (File, Tab & "dup");
@@ -181,7 +181,7 @@ package body Asm_Generation is
          when Syntaxic_Analysis.Node_Cond => 
             Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count (C) = 2 or Syntaxic_Analysis.Tree.Child_Count (C) = 3, "AST invalid 8");
             declare
-               Cond_Nb : constant Positive := Syntaxic_Analysis.Tree.Element(C).Cond_Count;
+               Cond_Nb : constant Positive := Syntaxic_Analysis.Tree.Element(C).Cond_NB;
                First_Child : constant Syntaxic_Analysis.Tree.Cursor := Syntaxic_Analysis.Tree.First_Child(C);
             
                Second_Child : constant Syntaxic_Analysis.Tree.Cursor := Syntaxic_Analysis.Tree.Next_Sibling (First_Child);
@@ -204,18 +204,18 @@ package body Asm_Generation is
                end if;
             end;
          when Syntaxic_Analysis.Node_Break => 
-            Put_Line (File, Tab & "jump end_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
+            Put_Line (File, Tab & "jump end_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_NB));
             
          when Syntaxic_Analysis.Node_Continue =>
-            Put_Line (File, Tab & "jump cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
+            Put_Line (File, Tab & "jump cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_NB));
             
          when Syntaxic_Analysis.Node_Label =>
-            Put_Line (File, ".cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_Count));
+            Put_Line (File, ".cont_loop_" & Image(Syntaxic_Analysis.Tree.Element (C).Loop_NB));
             Syntaxic_Analysis.Tree.Iterate_Children (Parent  => C,
                                                      Process => Call_Generate_Asm'Access);
          when Syntaxic_Analysis.Node_Loop =>
             declare
-               Current_Loop_Nb : Constant Positive := Syntaxic_Analysis.Tree.Element (C).Loop_Count;
+               Current_Loop_Nb : Constant Positive := Syntaxic_Analysis.Tree.Element (C).Loop_NB;
             begin
                Ada.Assertions.Assert (Syntaxic_Analysis.Tree.Child_Count(C) = 1 or Syntaxic_Analysis.Tree.Child_Count (C) = 3, "AST invalid 9");
                Put_Line (File, ".start_loop_" & Image (Current_Loop_Nb));

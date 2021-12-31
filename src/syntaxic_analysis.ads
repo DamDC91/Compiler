@@ -48,21 +48,21 @@ package Syntaxic_Analysis is
       Line      : Positive;
       case Node_Type is
          when Node_Constant =>
-            Value : Integer; -- can be negative if overflow
+            Value : Integer;
          when Node_Var_Decl =>
-            Var_Key : Natural;
+            Var_Key : Natural; -- The key associated to this variable
          when Node_Var_Ref =>
-            Ref_Var_Key : Natural;
-            Var_Stack_Index : Natural;
+            Ref_Var_Key : Natural;     -- This node is referenced the variable associated with this key
+            Var_Stack_OffSett : Natural; -- This is the offset of variable in the scope
          when Node_Cond =>
-            Cond_Count : Positive;
+            Cond_NB : Positive;
          when Node_Loop | Node_Break | Node_Continue | Node_Label =>
-            Loop_Count : Positive;
+            Loop_NB : Positive;
          when Node_Body_Func =>
-            Name_Key : Natural;
-            Nb_Var : Natural;
+            Name_Key : Natural; -- The key associated to this function
+            Nb_Var : Natural;   -- Nb of variable declared inside the function
          when Node_Call =>
-            Ref_Func_Key : Natural;
+            Ref_Func_Key : Natural; -- This node is referenced the function associated with this key
          when others => null;
       end case;
    end record;
