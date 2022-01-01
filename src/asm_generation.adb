@@ -23,7 +23,7 @@ package body Asm_Generation is
       when e : others =>
          Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "' cannot be created");
          Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, Ada.Exceptions.Exception_Message (e));
-         raise compilation_Error;
+         raise Internal_Error;
    end Create_File;
    
    procedure Add_Runtime (Runtime : String) is

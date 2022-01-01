@@ -33,17 +33,13 @@ package body Syntaxic_Analysis is
                               Source   => Tmp,
                               Position => Pos);
       end loop;
-      if Error_Log.Get_Debug_On then
-         Debug_Print_Tree (N);
-         Debug_Print_Tree_Graphviz (N);
-      end if;
+      Debug_Print_Tree (N);
+      Debug_Print_Tree_Graphviz (N);
       return N;
    exception
       when others =>
-         if Error_Log.Get_Debug_On then
-            Debug_Print_Tree (N);
-            Debug_Print_Tree_Graphviz (N);
-         end if;
+         Debug_Print_Tree (N);
+         Debug_Print_Tree_Graphviz (N);
          raise;
    end G;
 
@@ -116,10 +112,10 @@ package body Syntaxic_Analysis is
             Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
             Res.Insert_Child (Parent   => Res.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Minus_U,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => New_Item_Pos);
+                              Before   => Tree.No_Element,
+                              New_Item => (Node_Type => Node_Minus_U,
+                                           Line => Lexical_Analysis.Get_Current_Token.Line),
+                              Position => New_Item_Pos);
 
             Tree.Splice_Subtree (Target => Res,
                                  Parent   => New_Item_Pos,
@@ -137,10 +133,10 @@ package body Syntaxic_Analysis is
             Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
             Res.Insert_Child (Parent   => Res.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Not,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => New_Item_Pos);
+                              Before   => Tree.No_Element,
+                              New_Item => (Node_Type => Node_Not,
+                                           Line => Lexical_Analysis.Get_Current_Token.Line),
+                              Position => New_Item_Pos);
 
             Tree.Splice_Subtree (Target => Res,
                                  Parent   => New_Item_Pos,
@@ -159,10 +155,10 @@ package body Syntaxic_Analysis is
             Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
             Res.Insert_Child (Parent   => Res.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Dereference,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => New_Item_Pos);
+                              Before   => Tree.No_Element,
+                              New_Item => (Node_Type => Node_Dereference,
+                                           Line => Lexical_Analysis.Get_Current_Token.Line),
+                              Position => New_Item_Pos);
 
             Tree.Splice_Subtree (Target => Res,
                                  Parent   => New_Item_Pos,
@@ -180,10 +176,10 @@ package body Syntaxic_Analysis is
             Source_Pos : Tree.Cursor := Tree.First_Child (T.Root);
          begin
             Res.Insert_Child (Parent   => Res.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Address,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => New_Item_Pos);
+                              Before   => Tree.No_Element,
+                              New_Item => (Node_Type => Node_Address,
+                                           Line => Lexical_Analysis.Get_Current_Token.Line),
+                              Position => New_Item_Pos);
 
             Tree.Splice_Subtree (Target => Res,
                                  Parent   => New_Item_Pos,
@@ -267,7 +263,7 @@ package body Syntaxic_Analysis is
       else
          Error (msg  => "An atomic was expected here, found " & Lexical_Analysis.Get_Current_Token.Token_Type'Image,
                 Line => Lexical_Analysis.Get_Current_Token.Line);
-         raise Compilation_Error;
+         raise Input_Error;
       end if;
    end A;
 
@@ -819,10 +815,10 @@ package body Syntaxic_Analysis is
             New_Item_Pos : Tree.Cursor;
          begin
             Res.Insert_Child (Parent   => Res.Root,
-                             Before   => Tree.No_Element,
-                             New_Item => (Node_Type => Node_Drop,
-                                          Line => Lexical_Analysis.Get_Current_Token.Line),
-                             Position => New_Item_Pos);
+                              Before   => Tree.No_Element,
+                              New_Item => (Node_Type => Node_Drop,
+                                           Line => Lexical_Analysis.Get_Current_Token.Line),
+                              Position => New_Item_Pos);
 
             Lexical_Analysis.Accept_Token (Token.Tok_Semi_Colon);
 
@@ -869,7 +865,7 @@ package body Syntaxic_Analysis is
                if (not Lexical_Analysis.Check_Token (Token.Tok_Comma)) then
                   Error_Log.Error (Msg  => "comma is missing",
                                    Line => Lexical_Analysis.Get_Current_Token.Line);
-                  raise Error_Log.Compilation_Error;
+                  raise Error_Log.Input_Error;
                end if;
             end if;
             Lexical_Analysis.Accept_Token (Token.Tok_Int);
@@ -914,53 +910,53 @@ package body Syntaxic_Analysis is
 begin
    -- Op table initialisation
    Op_Table (Token.Tok_Assignment) := (Left_Priority => 1,
-                                 Right_Priority => 1,
-                                 Node => Node_Op_Assignment);
+                                       Right_Priority => 1,
+                                       Node => Node_Op_Assignment);
 
    Op_Table (Token.Tok_Or_Boolean) := (Left_Priority => 2,
-                                 Right_Priority => 3,
-                                 Node => Node_Op_Or_Boolean);
+                                       Right_Priority => 3,
+                                       Node => Node_Op_Or_Boolean);
 
    Op_Table (Token.Tok_And_Boolean) := (Left_Priority => 3,
-                                  Right_Priority => 4,
-                                  Node => Node_Op_And_Boolean);
+                                        Right_Priority => 4,
+                                        Node => Node_Op_And_Boolean);
 
    Op_Table (Token.Tok_Equal_Comparaison) := (Left_Priority => 4,
-                                        Right_Priority => 5,
-                                        Node => Node_Op_Equal_Comparaison);
+                                              Right_Priority => 5,
+                                              Node => Node_Op_Equal_Comparaison);
    Op_Table (Token.Tok_Difference_Comparaison) := (Left_Priority => 4,
-                                             Right_Priority => 5,
-                                             Node => Node_Op_Difference_Comparaison);
+                                                   Right_Priority => 5,
+                                                   Node => Node_Op_Difference_Comparaison);
 
    Op_Table (Token.Tok_Greater_than) := (Left_Priority => 5,
-                                   Right_Priority => 6,
-                                   Node => Node_Op_Greater_than);
-   Op_Table (Token.Tok_Greater_Or_Equal_Than) := (Left_Priority => 5,
-                                            Right_Priority => 6,
-                                            Node => Node_Op_Greater_Or_Equal_Than);
-   Op_Table (Token.Tok_Less_Than) := (Left_Priority => 5,
-                                Right_Priority => 6,
-                                Node => Node_Op_Less_Than);
-   Op_Table (Token.Tok_Less_Or_Equal_Than) := (Left_Priority => 5,
                                          Right_Priority => 6,
-                                         Node => Node_Op_Less_Or_Equal_Than);
+                                         Node => Node_Op_Greater_than);
+   Op_Table (Token.Tok_Greater_Or_Equal_Than) := (Left_Priority => 5,
+                                                  Right_Priority => 6,
+                                                  Node => Node_Op_Greater_Or_Equal_Than);
+   Op_Table (Token.Tok_Less_Than) := (Left_Priority => 5,
+                                      Right_Priority => 6,
+                                      Node => Node_Op_Less_Than);
+   Op_Table (Token.Tok_Less_Or_Equal_Than) := (Left_Priority => 5,
+                                               Right_Priority => 6,
+                                               Node => Node_Op_Less_Or_Equal_Than);
 
    Op_Table (Token.Tok_Plus) := (Left_Priority => 6,
-                           Right_Priority => 7,
-                           Node => Node_Op_Add);
+                                 Right_Priority => 7,
+                                 Node => Node_Op_Add);
    Op_Table (Token.Tok_Minus) := (Left_Priority => 6,
-                            Right_Priority => 7,
-                            Node => Node_Op_Sub);
+                                  Right_Priority => 7,
+                                  Node => Node_Op_Sub);
 
    Op_Table (Token.Tok_Asterisk) := (Left_Priority => 7,
-                               Right_Priority => 8,
-                               Node => Node_Op_Mult);
+                                     Right_Priority => 8,
+                                     Node => Node_Op_Mult);
    Op_Table (Token.Tok_Slash) := (Left_Priority => 7,
-                            Right_Priority => 8,
-                            Node => Node_Op_Division);
+                                  Right_Priority => 8,
+                                  Node => Node_Op_Division);
    Op_Table (Token.Tok_Percent) := (Left_Priority => 7,
-                              Right_Priority => 8,
-                              Node => Node_Op_Modulo);
+                                    Right_Priority => 8,
+                                    Node => Node_Op_Modulo);
 
 end Syntaxic_Analysis;
 

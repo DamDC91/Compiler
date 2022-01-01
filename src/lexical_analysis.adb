@@ -187,7 +187,7 @@ package body Lexical_Analysis is
                         if Is_Digit (Id(Id'First)) then
                            Error (Msg  => "Invalid variable name",
                                   Line => Line);
-                           raise Compilation_Error with "Invalid variable name";
+                           raise Input_Error;
                         end if;
 
                         return (Has_Value => True,
@@ -295,7 +295,7 @@ package body Lexical_Analysis is
             else
                Error (msg  => "a second '|' was expected",
                       Line => Line);
-               raise Compilation_Error;
+               raise Input_Error;
             end if;
 
          elsif char = ',' then
@@ -394,7 +394,7 @@ package body Lexical_Analysis is
                if Is_Letter_Or_Underscore (Ada.Strings.Unbounded.Element(File_Content, Index + 1)) then
                   Error (msg  => "invalid constant",
                          Line => Line);
-                  raise Compilation_Error;
+                  raise Input_Error;
                end if;
                
                Index := Index + 1;
@@ -409,7 +409,7 @@ package body Lexical_Analysis is
                      when others =>
                         Error(Msg  => "constant value is too big " & Ada.Strings.Unbounded.To_String(buffer),
                               Line => Line);
-                        raise Compilation_Error with "constant value is to big";
+                        raise Input_Error;
                   end;
                   
                   
@@ -434,7 +434,7 @@ package body Lexical_Analysis is
          else
             Error (msg  => "Unexpected Token " & Ada.Strings.Unbounded.Element (File_Content, Index),
                    Line => Line);
-            raise Compilation_Error;
+            raise Input_Error;
          end if;
       end;
    end Get_Token;
@@ -478,7 +478,7 @@ package body Lexical_Analysis is
    begin
       if not Check_Token(Token_Type) then
          Error(Token_Type'Image & " was excpected here, found " & Get_Next_Token.Token_Type'Image, Get_Current_Token.Line);
-         raise Error_Log.Compilation_Error;
+         raise Error_Log.Input_Error;
       end if;
    end Accept_Token;
 

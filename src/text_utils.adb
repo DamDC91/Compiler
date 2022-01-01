@@ -18,7 +18,7 @@ package body Text_Utils is
          when e : others =>
             Put_Line (Standard_Error, "error : '" & FileName & "' cannot be open");
             Put_Line (Standard_Error, Ada.Exceptions.Exception_Message (e));
-            raise Error_Log.compilation_Error;
+            raise Error_Log.Internal_Error;
       end;
 
       while not End_Of_File(File) loop

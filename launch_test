@@ -26,8 +26,6 @@ def Try_Run(test_name, command, err):
 print("testing...")
 
 for test_dir_name in os.listdir("."):
-    if test_dir_name == "fuzzing_exp":
-        continue
 
     print("-" * 10 + " " + BLUE + test_dir_name + ENDC + " " + "-" * 10)
     os.chdir(test_dir_name)

@@ -2,7 +2,9 @@ with Syntaxic_Analysis;
 with Token;
 package Error_Log is
 
-   Compilation_Error : Exception;
+   Input_Error : Exception;
+
+   Internal_Error : Exception;
 
    procedure Error (Msg : String; Line : Natural);
 
@@ -24,10 +26,6 @@ package Error_Log is
 
    procedure Set_Debug_On (B : Boolean);
 
-   function Get_Debug_On return Boolean;
-
    procedure Set_Output_Dir (s : String);
-
-   function Get_Output_Dir return String;
 
 end Error_Log;

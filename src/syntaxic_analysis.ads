@@ -75,6 +75,8 @@ package Syntaxic_Analysis is
 
    function G return Tree.Tree;
 
+private
+
    type Priority is range 0..8;
 
    function E (Min_Priority : Priority := Priority (0)) return Tree.Tree;
@@ -88,8 +90,6 @@ package Syntaxic_Analysis is
    function I return Tree.Tree;
 
    function F return Tree.Tree;
-
-   --function Debug_Print (N : Node_Variant_Type) return string;
 
    subtype Operation_Token is Token.Token_Type_Enum_Type range Token.Tok_Plus .. Token.Tok_Or_Boolean;
 

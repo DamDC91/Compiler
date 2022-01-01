@@ -77,23 +77,23 @@ begin
 
          if not Ada.Directories.Exists (Runtime_Dir) then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime directory is not found");
-            raise Error_Log.Compilation_Error;
+            raise Error_Log.Internal_Error;
 
          elsif not Ada.Directories.Exists (Runtime_Source_File) then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime source file is not found");
-            raise Error_Log.Compilation_Error;
+            raise Error_Log.Internal_Error;
 
          elsif not Ada.Directories.Exists (Start_File) then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "start.s is not found");
-            raise Error_Log.Compilation_Error;
+            raise Error_Log.Internal_Error;
 
          elsif not Ada.Directories.Exists (Output_Dir) or else Ada.Directories.Kind (Output_Dir) /= Ada.Directories.Directory then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Output directory doesn't exist");
-            raise Error_Log.Compilation_Error;
+            raise Error_Log.Internal_Error;
 
          elsif Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get) /= Ada.Directories.Simple_Name (Ada.Strings.Unbounded.To_String (Args.Output_Filename.Get)) then
             Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "invalid output file name");
-            raise Error_Log.Compilation_Error;
+            raise Error_Log.Internal_Error;
          end if;
 
          Error_Log.Set_Output_Dir (Output_Dir);
@@ -120,43 +120,45 @@ begin
 
             elsif not Ada.Directories.Exists (Runtime_Asm_File) then
                Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Runtime need to be compile first, please use the -r option");
-               raise Error_Log.Compilation_Error;
+               raise Error_Log.Internal_Error;
             end if;
          end;
 
-         Asm_Generation.Create_File (Asm_Filename);
+         if (Args.Files.Get'Length > 0) then
+            Asm_Generation.Create_File (Asm_Filename);
 
-         declare
-            Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
-         begin
-            Error_Log.Set_Warning_On (Args.warning.Get);
-            for i in Files_Array'First ..Files_Array'Last loop
+            declare
+               Files_Array   : constant Args.Files.Result_Array := Args.Files.Get;
+            begin
+               Error_Log.Set_Warning_On (Args.warning.Get);
+               for i in Files_Array'First ..Files_Array'Last loop
 
-               declare
-                  FileName : constant String := Ada.Strings.Unbounded.To_String (Files_Array (i));
-               begin
-
-                  if not Ada.Directories.Exists (FileName) then
-                     Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "': not such file");
-                     raise Error_Log.Compilation_Error;
-                  end if;
-                  Error_Log.Set_Filename  (FileName);
-                  Error_Log.Set_Debug_On (Args.debug.Get);
-                  Lexical_Analysis.Load(FileName);
                   declare
-                     T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+                     FileName : constant String := Ada.Strings.Unbounded.To_String (Files_Array (i));
                   begin
-                     Semantic_Analysis.AST_Analyse (T);
-                     Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+
+                     if not Ada.Directories.Exists (FileName) then
+                        Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "error : '" & FileName & "': not such file");
+                        raise Error_Log.Internal_Error;
+                     end if;
+                     Error_Log.Set_Filename  (FileName);
+                     Error_Log.Set_Debug_On (Args.debug.Get);
+                     Lexical_Analysis.Load(FileName);
+                     declare
+                        T : Syntaxic_Analysis.Tree.Tree := Syntaxic_Analysis.G;
+                     begin
+                        Semantic_Analysis.AST_Analyse (T);
+                        Asm_Generation.Generate_Asm (Syntaxic_Analysis.Tree.First_Child (T.Root));
+                     end;
                   end;
-               end;
-            end loop;
-         end;
+               end loop;
+            end;
 
-         Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
-         Asm_Generation.Add_Start (Start_Filename => Start_File);
+            Asm_Generation.Add_Runtime (Runtime  => Runtime_Asm_File);
+            Asm_Generation.Add_Start (Start_Filename => Start_File);
 
-         Asm_Generation.Close_File;
+            Asm_Generation.Close_File;
+         end if;
       end;
       if Args.Files.Get'Length > 0 then
          Ada.Text_IO.Put_Line ("Compilation succeed");
@@ -166,13 +168,18 @@ begin
    end if;
 
 exception
-   when Error_Log.Compilation_Error =>
-      Asm_Generation.Close_File;
+   when Error_Log.Input_Error =>
+      Asm_Generation.Delete_File;
       Error_Log.Close_Token_File;
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Compilation failed");
 
+   when Error_Log.Internal_Error =>
+      Asm_Generation.Delete_File;
+      Error_Log.Close_Token_File;
+      Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Compitlation failled");
+
    when others =>
-      Asm_Generation.Close_File;
+      Asm_Generation.Delete_File;
       Error_Log.Close_Token_File;
       Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error, "Bug report : please send a email with a reproducer at damien.de-campos@u-psud.fr");
       raise;

@@ -3,6 +3,8 @@ package Semantic_Analysis is
 
    procedure AST_Analyse (T : in out Syntaxic_Analysis.Tree.Tree);
    
+private
+   
    type Symbol_Type_Enum_Type is (Symbol_Var, Symbol_Func);
    
    type Symbol (Symbol_Type : Symbol_Type_Enum_Type := Symbol_Var) is record
@@ -24,13 +26,12 @@ package Semantic_Analysis is
    -- search a variable and return its index
    function Search_Ident (Id : Natural; Line : Positive) return Symbol;
    
-   procedure Update_Element (Id : Natural; El : Symbol);
+   procedure Update_Element (Id : Natural; El : Symbol; Line : Positive);
    
    procedure Add_Scope;
    
    procedure Rem_Scope;
 
-   function Get_Nb_Var return Natural;
    
    
 
